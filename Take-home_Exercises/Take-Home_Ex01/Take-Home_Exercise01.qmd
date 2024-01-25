@@ -8,7 +8,7 @@ format:
   html:
     code-fold: true
     code-summary: "code block"
-    code-tools: true
+    code-tools: false
     code-copy: true
 ---
 
@@ -95,9 +95,9 @@ Checking missing values
 ```{r}
 sum(is.na(stu_qqq_SG_selectedV))
 ```
-There are a total of 283 missing value which is merely 4.2% of the overall data set hence can regarded as statistically negligible.
+There are a total of *283 missing values* which is merely 4.2% of the overall data set hence can regarded as statistically negligible.
 
-Converting Data Types: Converting CNTSTUID & GENDER from `num` type to `chr`type as they are categorical in nature. Subsequently, renaming and recoding them to enhance a greater data comprehension.
+Converting Data Types: Converting CNTSTUID & GENDER from `num` type to `chr`type as they are categorical in nature. Subsequently, renaming and recoding them to enhance data comprehension.
 ```{r}
 stu_qqq_SG_selectedV<- stu_qqq_SG_selectedV %>% mutate(CNTSTUID = as.character(CNTSTUID))
 
@@ -122,8 +122,8 @@ stu_qqq_SG_selectedV<- stu_qqq_SG_selectedV %>%
 ### 4.1.1 Observations through Prob Density and Histogram
 
 Utilising the prob density and histogram, we develop the visualisation to observe the distributions and the summary stats across all subject of interests.
-::: panel-tabset
-#### ***All Subjects***
+
+#### *All Subjects*
 ```{r}
 stu_qqq_SG_selectedV <- stu_qqq_SG_selectedV %>%
   mutate(Maths = rowSums(stu_qqq_SG_selectedV[paste0('PV', c(1:10), "MATH")], 
@@ -156,7 +156,7 @@ ggplot(temp_Data, aes(x = value, y = Subject)) +
   theme(legend.position = "none")
 ```
 
-#### ***Maths Score***
+#### *Maths Score*
 
 ```{r}
 # Calculate mean and median
@@ -177,7 +177,7 @@ histogram_plot <- ggplot(data = stu_qqq_SG_selectedV, aes(x = Maths)) +
 # Print the plot
 print(histogram_plot)  
 ```
-#### ***Reading***
+#### *Reading*
 
 ```{r}
 # Calculate mean and median
@@ -187,8 +187,8 @@ median_value <- median(stu_qqq_SG_selectedV$Reading, na.rm = TRUE)
 # Create the histogram
 histogram_plot <- ggplot(data = stu_qqq_SG_selectedV, aes(x = Reading)) +
   geom_histogram(binwidth = 2, fill = "lightgreen", color = "black") +  # Adjust binwidth and color here
-  geom_vline(xintercept = mean_value, color = "red", linetype = "dashed", size = 0.5) +
-  geom_vline(xintercept = median_value, color = "blue", linetype = "dotted", size = 0.5) +
+  geom_vline(xintercept = mean_value, color = "red", linetype = "dashed", linewidth = 0.5) +
+  geom_vline(xintercept = median_value, color = "blue", linetype = "dotted", linewidth = 0.5) +
   labs(title = "Histogram of Reading Scores",
        x = "Reading Scores",
        y = "Frequency",
@@ -208,8 +208,8 @@ median_value <- median(stu_qqq_SG_selectedV$Science, na.rm = TRUE)
 # Create the histogram
 histogram_plot <- ggplot(data = stu_qqq_SG_selectedV, aes(x = Science)) +
   geom_histogram(binwidth = 2, fill = "lightpink", color = "black") +  # Adjust binwidth and color here
-  geom_vline(xintercept = mean_value, color = "red", linetype = "dashed", size = 0.5) +
-  geom_vline(xintercept = median_value, color = "blue", linetype = "dotted", size = 0.5) +
+  geom_vline(xintercept = mean_value, color = "red", linetype = "dashed", linewidth = 0.5) +
+  geom_vline(xintercept = median_value, color = "blue", linetype = "dotted", linewidth = 0.5) +
   labs(title = "Histogram of Science Scores",
        x = "Science Scores",
        y = "Frequency",
@@ -219,7 +219,6 @@ histogram_plot <- ggplot(data = stu_qqq_SG_selectedV, aes(x = Science)) +
 # Print the plot
 print(histogram_plot)  
 ```
-:::
 ::: {.thinkbox .think data-latex="think"}
 ##4.1.2 Insights & Observations
 
@@ -317,7 +316,7 @@ ggplot(data = stu_qqq_SG_selectedV, aes(y = Science, x = GENDER, color = GENDER)
        color = "Gender")
 ```
 :::
-::: {.thinkbox .think data-latex="think"}
+
 ### 4.2.2 Insights & Observations
 
 -   The aim of these visualisations was to show Gender performance across all individual subjects.
@@ -325,15 +324,16 @@ ggplot(data = stu_qqq_SG_selectedV, aes(y = Science, x = GENDER, color = GENDER)
 -   Males Mean scores are higher hence we can deduce that Males fair better in Math and Science subjects.
 
 -   Female fair better in Reading as compared to their Male counterparts.
-:::
+
 
 ## 4.3 Exploring Performance Score by SE Index
 
-### 4.3.1 SE Distribution and EX
+### 4.3.1 SE Distribution by Scores
 
 **SE Distribution**
 Let's first take a look into the socioeconomic (SE) distribution to gain some insights. 
 ```{r}
+stu_qqq_SG_selectedV <- na.omit(stu_qqq_SG_selectedV)
 ggplot(data = stu_qqq_SG_selectedV, aes(x = ESCS)) +
   stat_halfeye(adjust = 0.5,
                justification = -0.2,
@@ -373,12 +373,11 @@ se3 <- ggplot(data = stu_qqq_SG_selectedV,
 
 se1/se2/se3
 ```
-::: {.thinkbox .think data-latex="think"}
+
 ### 4.3.2 Insights & Observations
 - Left Skewed Distribution from the SE Index can be deduced that students with normal to high ESCS Index are more prevalent as compared to the lower ESCS index. To bring the conversation further, we can study into the distribution of native, 1st Gen and 2nd Gen by the ESCS index in the future.
 
 - Depicts a positive moderate correlation between Scores and ESCS index, hence we can infer that students with higher ESCS Index scores better in their subjects.
-:::
 
 # 5 Summary
 

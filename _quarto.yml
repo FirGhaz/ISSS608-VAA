@@ -36,13 +36,13 @@ website:
     - text: "Take-Home Exercises"
       menu:
         - text: "Take-Home Exercise 1"
-          href: "Take-home_Exercises/Take-Home_Ex01/Take-home_Ex01.html" 
+          href: "Take-home_Exercises/Take-Home_Ex01/Take-home_Exercise01.html" 
       
     
 
 format:
   html:
-    theme: minima
+    theme: sandstone
     css: styles.css
     toc: true
     toc-location: left
