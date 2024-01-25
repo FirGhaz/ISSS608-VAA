@@ -1,0 +1,401 @@
+---
+title: "Creating Data Visualisation Beyond Default"
+subtitle: "[Take Home Exercise 1](https://isss608-ay2023-24jan.netlify.app/take-home_ex/th_ex01)"
+author: "FirGhaz"
+date: 01/18/2024
+date modified: last-modified
+format:
+  html:
+    code-fold: true
+    code-summary: "code block"
+    code-tools: true
+    code-copy: true
+---
+
+# 1 Context Setting
+
+OECD education director Andreas Schleicher shared in a BBC article that “Singapore managed to achieve excellence without wide differences between children from wealthy and disadvantaged families.” (2016) Furthermore, several Singapore’s Minister for Education also started an “every school a good school” slogan. The general public, however, **strongly believes that there are still disparities that exist, especially between the elite schools and neighborhood school, between students from families with higher socioeconomic status and those with relatively lower socioeconomic status and immigration and non-immigration families**.
+
+![](images/Image2.jpeg){width="100%" height="60%"}
+
+
+# 2 Exercise Objectives
+
+The 2022 Programme for International Student Assessment (PISA) data was released on December 5, 2022. PISA global education survey every three years to assess the education systems worldwide through testing 15 year old students in the subjects of mathematics, reading, and science.
+
+In this take-home exercise, we are required to use appropriate **Exploratory Data Analysis (EDA)** methods and **ggplot2** functions to reveal:
+
+a. the distribution of Singapore students’ performance in **mathematics, reading, and science**, and
+
+b. the relationship between these performances with **schools, gender and socioeconomic status (SES)** of the students.
+
+# 3 Data Sets and Preparation
+
+## 3.1 Data Sets
+
+The [PISA 2022 database](https://www.oecd.org/pisa/data/2022database/) contains the full set of responses from individual students, school principals and parents. A total of five data sets were extracted and their contents are as follows:
+
+-   **Student questionnaire data file**
+
+-   School questionnaire data file
+
+-   Teacher questionnaire data file
+
+-   Cognitive item data file
+
+-   Questionnaire timing data file
+
+In this exercise, we are to utilize the student questionnaire data set only.
+
+## 3.2 Data Preparation
+
+### 3.2.1 Installing R Packages 
+
+Installation of mulitple R packages via the use of `pacman::p_load()` function from the **pacman package**. See the code chunk below:
+
+```{r}
+pacman::p_load(tidyverse, haven, dplyr, plyr, ggrepel, ggthemes, knitr, kableExtra, intsvy, hrbrthemes, ggridges, ggdist, patchwork, colorspace, reshape2, scales, ggplot2, ggpol, gridExtra)
+```
+
+### 3.2.2 Uploading & Filtering the Data Set 
+
+The students questionaire data file was uploaded as **stu_qqq_SG**. See the code chunk below: 
+```{r}
+stu_qqq <- read_sas("data/cy08msp_stu_qqq.sas7bdat")
+stu_qqq_SG <- stu_qqq %>% filter(CNT =="SGP")
+write_rds(stu_qqq_SG,"data/stu_qqq_SG.rds")
+stu_qqq_SG <- read_rds("data/stu_qqq_SG.rds")
+head(stu_qqq_SG, 5)
+```
+
+Focusing on the Exercise Objectives, the Data of Interests will be scoped towards selected variables. These variables are: 
+
+a) **STRATUM**
+b) **GENDER**
+c) **IMMIGRANT STATUS**
+d) **SES STATUS** 
+e) **PV Values**
+
+```{r}
+stu_qqq_SG_selectedV <- stu_qqq_SG %>% select(CNTSTUID, STRATUM, ST004D01T, IMMIG, ESCS,PV1READ:PV10READ, PV1SCIE:PV10SCIE, PV1MATH:PV10MATH)
+```
+
+The variables are all anchored based on each Student's **UNIQUE ID** - CNTSTUID
+
+### 3.2.3 Checking Data Structure and Coherency
+
+Next, we will check for duplicates, missing values and convert data types as part of data pre-processing.
+
+**Data Health** 
+Handling duplicates
+```{r}
+stu_qqq_SG_selectedV[duplicated(stu_qqq_SG_selectedV),]
+```
+Checking missing values
+```{r}
+sum(is.na(stu_qqq_SG_selectedV))
+```
+There are a total of 283 missing value which is merely 4.2% of the overall data set hence can regarded as statistically negligible.
+
+Converting Data Types: Converting CNTSTUID & GENDER from `num` type to `chr`type as they are categorical in nature. Subsequently, renaming and recoding them to enhance a greater data comprehension.
+```{r}
+stu_qqq_SG_selectedV<- stu_qqq_SG_selectedV %>% mutate(CNTSTUID = as.character(CNTSTUID))
+
+names(stu_qqq_SG_selectedV)[names(stu_qqq_SG_selectedV) == 'CNTSTUID'] <- 'STUDENT ID'
+
+names(stu_qqq_SG_selectedV)[names(stu_qqq_SG_selectedV) == 'ST004D01T'] <- 'GENDER'
+
+stu_qqq_SG_selectedV <- stu_qqq_SG_selectedV %>%
+  mutate(GENDER = recode(as.character(GENDER), '1' = 'FEMALE', '2' = 'MALE'))
+
+stu_qqq_SG_selectedV <- stu_qqq_SG_selectedV %>%
+  mutate(STRATUM = recode(STRATUM, 'SGP01' = 'MAINSTREAM SCH', 'SGP03' = 'PRIVATE SCH'))
+
+stu_qqq_SG_selectedV<- stu_qqq_SG_selectedV %>%
+  mutate(IMMIG = recode(IMMIG, '1' = 'NATIVE', '2' = '2ND GEN', '3' = '1ST GEN'))
+```
+
+# 4 Exploratory Data Analysis
+
+## 4.1 Explore Score Distribution across all subjects
+
+### 4.1.1 Observations through Prob Density and Histogram
+
+Utilising the prob density and histogram, we develop the visualisation to observe the distributions and the summary stats across all subject of interests.
+::: panel-tabset
+#### ***All Subjects***
+```{r}
+stu_qqq_SG_selectedV <- stu_qqq_SG_selectedV %>%
+  mutate(Maths = rowSums(stu_qqq_SG_selectedV[paste0('PV', c(1:10), "MATH")], 
+                   na.rm = TRUE)/100) %>% 
+  mutate(Reading = 
+           rowSums(stu_qqq_SG[paste0('PV', c(1:10), "READ")], 
+                   na.rm = TRUE)/100) %>% 
+  mutate(Science = 
+           rowSums(stu_qqq_SG[paste0('PV', c(1:10), "SCIE")], 
+                   na.rm = TRUE)/100)
+temp_Data <- stu_qqq_SG_selectedV[, c("Science", "Reading", "Maths")]
+temp_Data <- melt(temp_Data, variable.name = "Subject")
+ggplot(temp_Data, aes(x = value, y = Subject)) +
+  stat_halfeye(aes(fill = Subject), 
+               adjust = 0.5,
+               justification = 0.1,
+               .width = 0,
+               point_colour = NA) +
+  geom_boxplot(width = 0.2) +
+  stat_summary(fun = mean, geom = "point", shape = 16, 
+               size = 3, color = "darkred", 
+               position = position_nudge(x = 0.0)) +
+  stat_summary(fun = mean, colour="darkred", 
+               geom = "text", show.legend = FALSE, 
+               vjust = -1.5, aes( label=round(after_stat(x), 1))) +
+  labs(y = NULL, x = "Scores",
+       title = "Distribution of Scores",
+       subtitle = "Math subject, yielded greater performance by students compared to Reading and Science") +
+  theme_tidybayes()+
+  theme(legend.position = "none")
+```
+
+#### ***Maths Score***
+
+```{r}
+# Calculate mean and median
+mean_value <- mean(stu_qqq_SG_selectedV$Maths, na.rm = TRUE)
+median_value <- median(stu_qqq_SG_selectedV$Maths, na.rm = TRUE)
+
+# Create the histogram
+histogram_plot <- ggplot(data = stu_qqq_SG_selectedV, aes(x = Maths)) +
+  geom_histogram(binwidth = 2, fill = "lightblue", color = "black") +  # Adjust binwidth and color here
+  geom_vline(xintercept = mean_value, color = "red", linetype = "dashed", linewidth = 0.5) +
+  geom_vline(xintercept = median_value, color = "blue", linetype = "dotted", linewidth = 0.5) +
+  labs(title = "Histogram of Maths Scores",
+       x = "Maths Scores",
+       y = "Frequency",
+       subtitle = paste("Mean (red):", round(mean_value, 2), 
+                        "- Median (blue):", round(median_value, 2)))
+
+# Print the plot
+print(histogram_plot)  
+```
+#### ***Reading***
+
+```{r}
+# Calculate mean and median
+mean_value <- mean(stu_qqq_SG_selectedV$Reading, na.rm = TRUE)
+median_value <- median(stu_qqq_SG_selectedV$Reading, na.rm = TRUE)
+
+# Create the histogram
+histogram_plot <- ggplot(data = stu_qqq_SG_selectedV, aes(x = Reading)) +
+  geom_histogram(binwidth = 2, fill = "lightgreen", color = "black") +  # Adjust binwidth and color here
+  geom_vline(xintercept = mean_value, color = "red", linetype = "dashed", size = 0.5) +
+  geom_vline(xintercept = median_value, color = "blue", linetype = "dotted", size = 0.5) +
+  labs(title = "Histogram of Reading Scores",
+       x = "Reading Scores",
+       y = "Frequency",
+       subtitle = paste("Mean (red):", round(mean_value, 2), 
+                        "- Median (blue):", round(median_value, 2)))
+
+# Print the plot
+print(histogram_plot)  
+```
+#### ***Science***
+
+```{r}
+# Calculate mean and median
+mean_value <- mean(stu_qqq_SG_selectedV$Science, na.rm = TRUE)
+median_value <- median(stu_qqq_SG_selectedV$Science, na.rm = TRUE)
+
+# Create the histogram
+histogram_plot <- ggplot(data = stu_qqq_SG_selectedV, aes(x = Science)) +
+  geom_histogram(binwidth = 2, fill = "lightpink", color = "black") +  # Adjust binwidth and color here
+  geom_vline(xintercept = mean_value, color = "red", linetype = "dashed", size = 0.5) +
+  geom_vline(xintercept = median_value, color = "blue", linetype = "dotted", size = 0.5) +
+  labs(title = "Histogram of Science Scores",
+       x = "Science Scores",
+       y = "Frequency",
+       subtitle = paste("Mean (red):", round(mean_value, 2), 
+                        "- Median (blue):", round(median_value, 2)))
+
+# Print the plot
+print(histogram_plot)  
+```
+:::
+::: {.thinkbox .think data-latex="think"}
+##4.1.2 Insights & Observations
+
+-   The aim of these visualisations was to show the performance distribution of students across all individual subjects.
+
+-   Trends in each plot showed :
+
+    -   distribution characteristic is of a Normal Distribution,
+
+    -   distribution mildly skews to the left.
+    
+    -   From here we can deduce that just about more than half of the cohort scores above the 50% mark.
+
+-   Students fair better in Math, as a subject, compared to Reading and Science.
+:::
+
+## 4.2 Exploring Performance Score by Gender
+
+
+### 4.2.1 Observations through boxplots
+Utilising the boxplots, we visualise the how gender fair across all subjects.
+
+::: panel-tabset
+#### ***Math***
+```{r}
+library(ggplot2)
+
+# Calculate mean and median for each gender
+means <- aggregate(Maths ~ GENDER, data = stu_qqq_SG_selectedV, FUN = mean)
+
+# Create the boxplot
+ggplot(data = stu_qqq_SG_selectedV, aes(y = Maths, x = GENDER, color = GENDER)) +
+  geom_boxplot(width = 0.3) +
+  
+  # Add mean lines
+  geom_errorbar(data = means, aes(ymin = Maths, ymax = Maths, x = GENDER), 
+                width = 0.2, color = "darkred") +
+  geom_text(data = means, aes(label = round(Maths, 1), y = Maths, x = GENDER), 
+            vjust = -1.5, color = "darkred", size = 3) +
+  
+  # Titles and subtitles
+  labs(title = "Maths Scores by Gender",
+       subtitle = "Male scores better in Maths in comparison with Female",
+       x = "Gender",
+       y = "Maths Scores",
+       color = "Gender")
+
+```
+#### ***Reading***
+```{r}
+library(ggplot2)
+
+# Calculate mean and median for each gender
+means <- aggregate(Reading ~ GENDER, data = stu_qqq_SG_selectedV, FUN = mean)
+
+# Create the boxplot
+ggplot(data = stu_qqq_SG_selectedV, aes(y = Reading, x = GENDER, color = GENDER)) +
+  geom_boxplot(width = 0.3) +
+  
+  # Add mean lines
+  geom_errorbar(data = means, aes(ymin = Reading, ymax = Reading, x = GENDER), 
+                width = 0.2, color = "darkred") +
+  geom_text(data = means, aes(label = round(Reading, 1), y = Reading, x = GENDER), 
+            vjust = -1.5, color = "darkred", size = 3) +
+  
+  # Titles and subtitles
+  labs(title = "Reading Scores by Gender",
+       subtitle = "Female scores better in Reading",
+       x = "Gender",
+       y = "Reading Scores",
+       color = "Gender")
+```
+#### ***Science***
+```{r}
+library(ggplot2)
+
+# Calculate mean and median for each gender
+means <- aggregate(Science ~ GENDER, data = stu_qqq_SG_selectedV, FUN = mean)
+
+# Create the boxplot
+ggplot(data = stu_qqq_SG_selectedV, aes(y = Science, x = GENDER, color = GENDER)) +
+  geom_boxplot(width = 0.3) +
+  
+  # Add mean lines
+  geom_errorbar(data = means, aes(ymin = Science, ymax = Science, x = GENDER), 
+                width = 0.2, color = "darkred") +
+  geom_text(data = means, aes(label = round(Science, 1), y = Science, x = GENDER), 
+            vjust = -1.5, color = "darkred", size = 3) +
+  
+  # Titles and subtitles
+  labs(title = "Science Scores by Gender",
+       subtitle = "Male scores better in Science as compared to their Female counterparts",
+       x = "Gender",
+       y = "Science Scores",
+       color = "Gender")
+```
+:::
+::: {.thinkbox .think data-latex="think"}
+### 4.2.2 Insights & Observations
+
+-   The aim of these visualisations was to show Gender performance across all individual subjects.
+
+-   Males Mean scores are higher hence we can deduce that Males fair better in Math and Science subjects.
+
+-   Female fair better in Reading as compared to their Male counterparts.
+:::
+
+## 4.3 Exploring Performance Score by SE Index
+
+### 4.3.1 SE Distribution and EX
+
+**SE Distribution**
+Let's first take a look into the socioeconomic (SE) distribution to gain some insights. 
+```{r}
+ggplot(data = stu_qqq_SG_selectedV, aes(x = ESCS)) +
+  stat_halfeye(adjust = 0.5,
+               justification = -0.2,
+               .width = 0, point_colour = NA) +
+  geom_boxplot(width = 0.20,
+               outlier.shape = NA) +
+  labs(y = NULL,
+       title = "SE Distribution", subtitle = "Left-Skewed SE Distribution")  +
+  theme_tidybayes()
+```
+**ESCS Index by Subject Performance**
+```{r}
+cor1 <- round(cor(stu_qqq_SG_selectedV$Maths, stu_qqq_SG_selectedV$ESCS),2)
+cor2 <- round(cor(stu_qqq_SG_selectedV$Science, stu_qqq_SG_selectedV$ESCS),2)
+cor3 <- round(cor(stu_qqq_SG_selectedV$Reading, stu_qqq_SG_selectedV$ESCS),2)
+
+se1 <- ggplot(data = stu_qqq_SG_selectedV,
+             aes(y = Maths, x = ESCS)) +
+        geom_point(size = 0.1)+
+        geom_smooth(method = lm) + 
+        annotate("text", x = 2.5, y = 100, label=paste0("r = ", cor1), color = 'lightblue') +
+        theme_tidybayes()
+
+se2 <- ggplot(data = stu_qqq_SG_selectedV,
+             aes(y = Science, x = ESCS)) +
+        geom_point(size = 0.1)+
+        geom_smooth(method = lm) +
+        annotate("text", x = 2.5, y = 100, label=paste0("r = ", cor2), color = 'lightgreen') + 
+        theme_tidybayes()
+
+se3 <- ggplot(data = stu_qqq_SG_selectedV,
+             aes(y = Reading, x = ESCS)) +
+        geom_point(size = 0.1)+
+        geom_smooth(method = lm) + 
+        annotate("text", x = 2.5, y = 100, label=paste0("r = ", cor3), color = 'lightpink') +
+        theme_tidybayes()
+
+se1/se2/se3
+```
+::: {.thinkbox .think data-latex="think"}
+### 4.3.2 Insights & Observations
+- Left Skewed Distribution from the SE Index can be deduced that students with normal to high ESCS Index are more prevalent as compared to the lower ESCS index. To bring the conversation further, we can study into the distribution of native, 1st Gen and 2nd Gen by the ESCS index in the future.
+
+- Depicts a positive moderate correlation between Scores and ESCS index, hence we can infer that students with higher ESCS Index scores better in their subjects.
+:::
+
+# 5 Summary
+
+
+- Math is the Subject that scores higher as compared to Reading and Science. 
+
+- Male tends to score in both Maths and Science, while Females are comparatively higher in terms of scoring in Reading.
+
+- There is a positive correlation between the Socioecomic Index (ESCS) and performance of students.
+
+- From the distribution (SE index), students with normal to high ESCS Index are more prevalent as compared to the lower ESCS index.
+
+- Students with higher ESCS Index tends to score better in their subjects.
+
+
+
+
+
+
+

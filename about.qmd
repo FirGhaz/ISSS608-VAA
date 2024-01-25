@@ -1,9 +1,15 @@
 ---
-title: "About"
+title: "About Me"
+date: 01/13/2024
+date-modified: last-modified
+format:
+  html:
+    code-fold: true
+    code-summary: "code block"
+    code-tools: true
+    code-copy: true
 ---
 
-About this site
+![](images/Dilemma.jpeg){width="20%" height="60%"}
 
-```{r}
-1 + 1
-```
+
