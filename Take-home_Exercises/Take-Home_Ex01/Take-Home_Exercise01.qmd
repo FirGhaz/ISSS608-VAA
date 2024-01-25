@@ -219,8 +219,8 @@ histogram_plot <- ggplot(data = stu_qqq_SG_selectedV, aes(x = Science)) +
 # Print the plot
 print(histogram_plot)  
 ```
-::: {.thinkbox .think data-latex="think"}
-##4.1.2 Insights & Observations
+
+## 4.1.2 Insights & Observations
 
 -   The aim of these visualisations was to show the performance distribution of students across all individual subjects.
 

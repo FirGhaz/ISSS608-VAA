@@ -9,7 +9,13 @@ format:
     code-tools: true
     code-copy: true
 ---
+                             The Dilemma
+                             
+            That was me at the start of the ADD | DROP period. 
+                    Ouh well, hi guys Firdaus here! 
+    Thrilled to be in this VAA journey, under the stewardship of Prof Kam ;)
 
-![](images/Dilemma.jpeg){width="20%" height="60%"}
+![](images/Dilemma.png){width="30%" height="80%"}
+
 
 
