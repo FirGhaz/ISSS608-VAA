@@ -193,33 +193,37 @@ To achieve the balance between aesthetics and clarity these enhancements can be 
   
   4. A violin plot can be utilised in the background to give a sense of the distribution and range of the performance within each gender and subject domains.
   
-  5. 
+  5. The *Grid* panels, major and minor lines were designed to be subtle-ly more apparent so that it can provide quick reference to x/y axis for the various bins
+  
+  6. Both axes to start from '0' to give an accurate representation of each bin.
+  
+  7. The fill colour of the Histogram bins were made with high transparent fill effect, this is to allow easier reference of all the major and minor grid lines for x and y axes.
   
 ```{r}
-#| warning = false
 P7 <- ggplot(data= stu_qqq_SG_selectedV,
        aes(x= GENDER, y= Maths)) +
   geom_violin(color = "#459395", size = 0.6, fill= "#459395", alpha = 0.4) +
   geom_boxplot(width= 0.4, outlier.colour = "grey30", outlier.size = 3, outlier.color = "darkblue", 
                outlier.alpha = 0.5, outlier.shape = 19) +
   stat_summary(geom = "point",       
-               fun.y="mean",         
+               fun ="mean",         
                colour ="red",        
                size=3) +  coord_cartesian(ylim = c(0,1000)) +
   scale_color_manual(values=c("#999999", "#E69F00")) +
   theme_minimal() +
   labs(title="Mathematics") +  
-  theme(axis.title.x = element_blank(),
-        axis.title.y = element_blank(),
-        plot.title=element_text(size= 12, hjust= 0.5),
-        axis.text = element_text(size= 10)) 
-P7 <- P7 +
-  stat_summary(aes(label = round(..y.., 2)), geom = "text", fun.y = mean, 
-               vjust = -1.0, color = "red", size = 3) +
-  stat_summary(aes(label = round(..y.., 2)), geom = "text", fun.y = median, 
-               vjust = 1.8, color = "blue", size = 3) + theme(panel.background = element_rect(fill = "grey95", color = NA),
+  theme(panel.background = element_rect(fill = "grey95", color = NA),
         panel.grid.major = element_line(color = "grey80", size = 0.5),
-        panel.grid.minor = element_line(color = "grey90", size = 0.25))
+        panel.grid.minor = element_line(color = "grey90", size = 0.25),
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        plot.title = element_text(size = 12, hjust = 0.5),
+        axis.text = element_text(size = 10))
+P7 <- P7 +
+  stat_summary(aes(label = round(..y.., 2)), geom = "text", fun = mean, 
+               vjust = -1.0, color = "red", size = 3) +
+  stat_summary(aes(label = round(..y.., 2)), geom = "text", fun = median, 
+               vjust = 1.8, color = "blue", size = 3)
   
 
 P8 <- ggplot(data= stu_qqq_SG_selectedV,
@@ -228,24 +232,24 @@ P8 <- ggplot(data= stu_qqq_SG_selectedV,
   geom_boxplot(width= 0.4, outlier.colour = "grey30", outlier.size = 3, outlier.color = "darkred", 
                outlier.alpha = 0.5, outlier.shape = 19) +
   stat_summary(geom = "point",       
-               fun.y="mean",         
+               fun ="mean",         
                colour ="red",        
                size=3) +  coord_cartesian(ylim = c(0,1000)) +  
   theme_minimal() +
   labs(title="Reading") + 
-  theme(axis.title.x = element_blank(),
+  theme(panel.background = element_rect(fill = "grey95", color = NA),
+        panel.grid.major = element_line(color = "grey80", size = 0.5),
+        panel.grid.minor = element_line(color = "grey90", size = 0.25),
+        axis.title.x = element_blank(),
         axis.title.y = element_blank(),
-        axis.text.y = element_blank(),
-        plot.title=element_text(size= 12, hjust= 0.5),
-        axis.text = element_text(size= 10)) 
+        plot.title = element_text(size = 12, hjust = 0.5),
+        axis.text = element_text(size = 10))
   
 P8 <- P8 +
-  stat_summary(aes(label = round(..y.., 2)), geom = "text", fun.y = mean, 
+  stat_summary(aes(label = round(..y.., 2)), geom = "text", fun = mean, 
                vjust = -1.0, color = "red", size = 3) +
-  stat_summary(aes(label = round(..y.., 2)), geom = "text", fun.y = median, 
-               vjust = 1.8, color = "blue", size = 3) + theme(panel.background = element_rect(fill = "grey95", color = NA),
-        panel.grid.major = element_line(color = "grey80", size = 0.5),
-        panel.grid.minor = element_line(color = "grey90", size = 0.25))
+  stat_summary(aes(label = round(..y.., 2)), geom = "text", fun = median, 
+               vjust = 1.8, color = "blue", size = 3)
   
 P9 <- ggplot(data= stu_qqq_SG_selectedV,
        aes(x= GENDER, y= Science)) +
@@ -253,32 +257,30 @@ P9 <- ggplot(data= stu_qqq_SG_selectedV,
   geom_boxplot(width= 0.4, outlier.colour = "grey30", outlier.size = 3, outlier.color = "red", 
                outlier.alpha = 0.5, outlier.shape = 19) +
   stat_summary(geom = "point",       
-               fun.y="mean",         
+               fun ="mean",         
                colour ="red",        
                size=3) +  coord_cartesian(ylim = c(0,1000)) +  
   theme_minimal() +
   labs(title="Science") + 
-  theme(axis.title.x = element_blank(),
-        axis.text.y = element_blank(),
+  theme(panel.background = element_rect(fill = "grey95", color = NA),
+        panel.grid.major = element_line(color = "grey80", size = 0.5),
+        panel.grid.minor = element_line(color = "grey90", size = 0.25),
+        axis.title.x = element_blank(),
         axis.title.y = element_blank(),
-        plot.title=element_text(size= 12, hjust= 0.5),
-        axis.text = element_text(size= 10)) 
+        plot.title = element_text(size = 12, hjust = 0.5),
+        axis.text = element_text(size = 10))
 
 P9 <- P9 +
-  stat_summary(aes(label = round(..y.., 2)), geom = "text", fun.y = mean, 
+  stat_summary(aes(label = round(..y.., 2)), geom = "text", fun = mean, 
                vjust = -1.0, color = "red", size = 3) +
-  stat_summary(aes(label = round(..y.., 2)), geom = "text", fun.y = median, 
-               vjust = 1.8, color = "blue", size = 3) + theme(panel.background = element_rect(fill = "grey95", color = NA),
-        panel.grid.major = element_line(color = "grey80", size = 0.5),
-        panel.grid.minor = element_line(color = "grey90", size = 0.25)) +
+  stat_summary(aes(label = round(..y.., 2)), geom = "text", fun = median, 
+               vjust = 1.8, color = "blue", size = 3) +
   annotate("text", x = 2.0, y = 1000, label = "Mean Value", color = "red", size = 3.5, alpha = 0.8) +
   annotate("text", x =2.0, y = 960, label = "Median Value", color = "blue", size = 3.5, alpha = 0.8)
 
 (P7 + P8 + P9) +
     plot_annotation(title= "Distribution of Performance (PV) by Gender", subtitle = "Higher mean scores in Math & Science, for Male Gender", theme = theme(plot.title=element_text(size= 15, hjust= 0.5)))
   
-
-
 ```
 
 # 5. My Take-Aways
