@@ -54,5 +54,180 @@
     "title": "Viz- Makeover Exercise",
     "section": "4.2 Potential Enhancements",
     "text": "4.2 Potential Enhancements\nTo achieve the balance between aesthetics and clarity these enhancements can be made:\n\nY axis must be accurately represented across all subjects. This will give a more coherent representation of the means and stats median across the 3 subjects.\nWe can also explore to include the Statistical Summary of Mean and Median values and the lines corresponding to it and input a legend on the top right for quick reference.\nA violin plot can be utilised in the background to give a sense of the distribution and range of the performance within each gender and subject domains.\nThe Grid panels, major and minor lines were designed to be subtle-ly more apparent so that it can provide quick reference to x/y axis for the various bins\nBoth axes to start from ‘0’ to give an accurate representation of each bin.\nThe fill colour of the Histogram bins were made with high transparent fill effect, this is to allow easier reference of all the major and minor grid lines for x and y axes.\n\n\n\nCode\nP7 &lt;- ggplot(data= stu_qqq_SG_selectedV,\n       aes(x= GENDER, y= Maths)) +\n  geom_violin(color = \"#459395\", size = 0.6, fill= \"#459395\", alpha = 0.4) +\n  geom_boxplot(width= 0.4, outlier.colour = \"grey30\", outlier.size = 3, outlier.color = \"darkblue\", \n               outlier.alpha = 0.5, outlier.shape = 19) +\n  stat_summary(geom = \"point\",       \n               fun =\"mean\",         \n               colour =\"red\",        \n               size=3) +  coord_cartesian(ylim = c(0,1000)) +\n  scale_color_manual(values=c(\"#999999\", \"#E69F00\")) +\n  theme_minimal() +\n  labs(title=\"Mathematics\") +  \n  theme(panel.background = element_rect(fill = \"grey95\", color = NA),\n        panel.grid.major = element_line(color = \"grey80\", size = 0.5),\n        panel.grid.minor = element_line(color = \"grey90\", size = 0.25),\n        axis.title.x = element_blank(),\n        axis.title.y = element_blank(),\n        plot.title = element_text(size = 12, hjust = 0.5),\n        axis.text = element_text(size = 10))\nP7 &lt;- P7 +\n  stat_summary(aes(label = round(..y.., 2)), geom = \"text\", fun = mean, \n               vjust = -1.0, color = \"red\", size = 3) +\n  stat_summary(aes(label = round(..y.., 2)), geom = \"text\", fun = median, \n               vjust = 1.8, color = \"blue\", size = 3)\n  \n\nP8 &lt;- ggplot(data= stu_qqq_SG_selectedV,\n       aes(x= GENDER, y= Reading)) +\n  geom_violin(color = \"#EB7C69\", size = 0.6, fill= \"#EB7C69\", alpha = 0.4) +\n  geom_boxplot(width= 0.4, outlier.colour = \"grey30\", outlier.size = 3, outlier.color = \"darkred\", \n               outlier.alpha = 0.5, outlier.shape = 19) +\n  stat_summary(geom = \"point\",       \n               fun =\"mean\",         \n               colour =\"red\",        \n               size=3) +  coord_cartesian(ylim = c(0,1000)) +  \n  theme_minimal() +\n  labs(title=\"Reading\") + \n  theme(panel.background = element_rect(fill = \"grey95\", color = NA),\n        panel.grid.major = element_line(color = \"grey80\", size = 0.5),\n        panel.grid.minor = element_line(color = \"grey90\", size = 0.25),\n        axis.title.x = element_blank(),\n        axis.title.y = element_blank(),\n        plot.title = element_text(size = 12, hjust = 0.5),\n        axis.text = element_text(size = 10))\n  \nP8 &lt;- P8 +\n  stat_summary(aes(label = round(..y.., 2)), geom = \"text\", fun = mean, \n               vjust = -1.0, color = \"red\", size = 3) +\n  stat_summary(aes(label = round(..y.., 2)), geom = \"text\", fun = median, \n               vjust = 1.8, color = \"blue\", size = 3)\n  \nP9 &lt;- ggplot(data= stu_qqq_SG_selectedV,\n       aes(x= GENDER, y= Science)) +\n  geom_violin(color = \"#FDA638\", size = 0.6, fill= \"#FDA638\", alpha = 0.4) +\n  geom_boxplot(width= 0.4, outlier.colour = \"grey30\", outlier.size = 3, outlier.color = \"red\", \n               outlier.alpha = 0.5, outlier.shape = 19) +\n  stat_summary(geom = \"point\",       \n               fun =\"mean\",         \n               colour =\"red\",        \n               size=3) +  coord_cartesian(ylim = c(0,1000)) +  \n  theme_minimal() +\n  labs(title=\"Science\") + \n  theme(panel.background = element_rect(fill = \"grey95\", color = NA),\n        panel.grid.major = element_line(color = \"grey80\", size = 0.5),\n        panel.grid.minor = element_line(color = \"grey90\", size = 0.25),\n        axis.title.x = element_blank(),\n        axis.title.y = element_blank(),\n        plot.title = element_text(size = 12, hjust = 0.5),\n        axis.text = element_text(size = 10))\n\nP9 &lt;- P9 +\n  stat_summary(aes(label = round(..y.., 2)), geom = \"text\", fun = mean, \n               vjust = -1.0, color = \"red\", size = 3) +\n  stat_summary(aes(label = round(..y.., 2)), geom = \"text\", fun = median, \n               vjust = 1.8, color = \"blue\", size = 3) +\n  annotate(\"text\", x = 2.0, y = 1000, label = \"Mean Value\", color = \"red\", size = 3.5, alpha = 0.8) +\n  annotate(\"text\", x =2.0, y = 960, label = \"Median Value\", color = \"blue\", size = 3.5, alpha = 0.8)\n\n(P7 + P8 + P9) +\n    plot_annotation(title= \"Distribution of Performance (PV) by Gender\", subtitle = \"Higher mean scores in Math & Science, for Male Gender\", theme = theme(plot.title=element_text(size= 15, hjust= 0.5)))\n\n\nWarning: The dot-dot notation (`..y..`) was deprecated in ggplot2 3.4.0.\nℹ Please use `after_stat(y)` instead."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html",
+    "title": "Visualising Distribution",
+    "section": "",
+    "text": "In this exercise, the learning outcome is to develop two relatively new statistical graphic methods for visualising distribution, namely (1) ridgeline plot and raincloud plot by using ggplot2 and its extensions."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#learning-outcome",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#learning-outcome",
+    "title": "Visualising Distribution",
+    "section": "",
+    "text": "In this exercise, the learning outcome is to develop two relatively new statistical graphic methods for visualising distribution, namely (1) ridgeline plot and raincloud plot by using ggplot2 and its extensions."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#getting-started",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#getting-started",
+    "title": "Visualising Distribution",
+    "section": "1.2 Getting Started",
+    "text": "1.2 Getting Started\n\n1.2.1 Installing R Packages\nFor the purpose of this exercise, the following R packages will be used, they are:\n\ntidyverse, a family of R packages for data science process,\nggridges, a ggplot2 extension specially designed for plotting ridgeline plots, and\nggdist for visualising distribution and uncertainty.\n\n\n\nCode\npacman::p_load(ggdist, ggridges, ggthemes,\n               colorspace, tidyverse)\n\n\n\n\n1.2.2 Data Import\nFor this exercise, the Exam data will be imported:\n\n\nCode\nexam &lt;- read_csv(\"data/Exam_data.csv\")\n\n\nRows: 322 Columns: 7\n── Column specification ────────────────────────────────────────────────────────\nDelimiter: \",\"\nchr (4): ID, CLASS, GENDER, RACE\ndbl (3): ENGLISH, MATHS, SCIENCE\n\nℹ Use `spec()` to retrieve the full column specification for this data.\nℹ Specify the column types or set `show_col_types = FALSE` to quiet this message."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualising-distribution-with-ridgeline-plot",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#visualising-distribution-with-ridgeline-plot",
+    "title": "Visualising Distribution",
+    "section": "1.3 Visualising Distribution with Ridgeline Plot",
+    "text": "1.3 Visualising Distribution with Ridgeline Plot\nRidgeline plot (sometimes called Joyplot) is a data visualisation technique for revealing the distribution of a numeric value for several groups. Distribution can be represented using histograms or density plots, all aligned to the same horizontal scale and presented with a slight overlap.\nFigure below is a ridgelines plot showing the distribution of English score by class.\n\n\n\n\n\n\n\nTip\n\n\n\nRidgeline plots make sense when the number of group to represent is medium to high, and thus a classic window separation would take to much space. Indeed, the fact that groups overlap each other allows to use space more efficiently. If you have less than 5 groups, dealing with other distribution plots is probably better.\nIt works well when there is a clear pattern in the result, like if there is an obvious ranking in groups. Otherwise group will tend to overlap each other, leading to a messy plot not providing any insight."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#plotting-ridgeline-graph-using-ggridges-method",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#plotting-ridgeline-graph-using-ggridges-method",
+    "title": "Visualising Distribution",
+    "section": "1.3.1 Plotting Ridgeline Graph using Ggridges Method",
+    "text": "1.3.1 Plotting Ridgeline Graph using Ggridges Method\nThere are several ways to plot ridgeline plot with R. In this section, you will learn how to plot ridgeline plot by using ggridges package.\nggridges package provides two main geom to plot gridgeline plots, they are: geom_ridgeline() and geom_density_ridges() The former takes height values directly to draw the ridgelines, and the latter first estimates data densities and then draws those using ridgelines.\nThe ridgeline plot below is plotted by using geom_density_ridges().\n\nThe PlotThe Code Chunk\n\n\n\n\n\n\n\n\n\n\n\nCode\nggplot(exam, \n       aes(x = ENGLISH, \n           y = CLASS)) +\n  geom_density_ridges(\n    scale = 3,\n    rel_min_height = 0.01,\n    bandwidth = 3.4,\n    fill = lighten(\"#7097BB\", .3),\n    color = \"white\"\n  ) +\n  scale_x_continuous(\n    name = \"English grades\",\n    expand = c(0, 0)\n    ) +\n  scale_y_discrete(name = NULL, expand = expansion(add = c(0.2, 2.6))) +\n  theme_ridges()"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#varying-fill-colours-along-x-axis",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#varying-fill-colours-along-x-axis",
+    "title": "Visualising Distribution",
+    "section": "1.3.2 Varying fill colours along X-axis",
+    "text": "1.3.2 Varying fill colours along X-axis\nSometimes we would like to have the area under a ridgeline not filled with a single solid color but rather with colors that vary in some form along the x axis. This effect can be achieved by using either geom_ridgeline_gradient() or geom_density_ridges_gradient(). Both geoms work just like geom_ridgeline() and geom_density_ridges(), except that they allow for varying fill colors. However, they do not allow for alpha transparency in the fill. For technical reasons, we can have changing fill colors or transparency but not both.\n\nThe PlotThe Code Chunk\n\n\n\n\n\n\n\n\n\n\n\nCode\nggplot(exam, \n       aes(x = ENGLISH, \n           y = CLASS,\n           fill = stat(x))) +\n  geom_density_ridges_gradient(\n    scale = 3,\n    rel_min_height = 0.01) +\n  scale_fill_viridis_c(name = \"Temp. [F]\",\n                       option = \"C\") +\n  scale_x_continuous(\n    name = \"English grades\",\n    expand = c(0, 0)\n  ) +\n  scale_y_discrete(name = NULL, expand = expansion(add = c(0.2, 2.6))) +\n  theme_ridges()"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#mapping-probabilities-directly-onto-colours",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#mapping-probabilities-directly-onto-colours",
+    "title": "Visualising Distribution",
+    "section": "1.3.2 Mapping Probabilities directly onto Colours",
+    "text": "1.3.2 Mapping Probabilities directly onto Colours\nBeside providing additional geom objects to support the need to plot ridgeline plot, ggridges package also provides a stat function called stat_density_ridges() that replaces stat_density() of ggplot2.\nFigure below is plotted by mapping the probabilities calculated by using stat(ecdf) which represent the empirical cumulative density function for the distribution of English score.\n\nThe PlotThe Code Chunk\n\n\n\n\n\n\n\n\n\n\n\nCode\nggplot(exam,\n       aes(x = ENGLISH, \n           y = CLASS, \n           fill = 0.5 - abs(0.5-stat(ecdf)))) +\n  stat_density_ridges(geom = \"density_ridges_gradient\", \n                      calc_ecdf = TRUE) +\n  scale_fill_viridis_c(name = \"Tail probability\",\n                       direction = -1) +\n  theme_ridges()\n\n\n\n\n\n\nIt is important include the argument calc_ecdf = TRUE in stat_density_ridges()."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#plotting-a-half-eye-graph",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#plotting-a-half-eye-graph",
+    "title": "Visualising Distribution",
+    "section": "1.4.1 Plotting a half eye graph",
+    "text": "1.4.1 Plotting a half eye graph\nFirst, we will plot a Half-Eye graph by using stat_halfeye() of ggdist package.\nThis produces a Half Eye visualization, which is contains a half-density and a slab-interval.\n\nThe PlotThe Code Chunk\n\n\n\n\n\n\n\n\n\n\n\nCode\nggplot(exam, \n       aes(x = RACE, \n           y = ENGLISH)) +\n  stat_halfeye(adjust = 0.5,\n               justification = -0.2,\n               .width = 0,\n               point_colour = NA)\n\n\n\n\n\n\nWe remove the slab interval by setting .width = 0 and point_colour = NA."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#adding-the-boxplot-with-geom_boxplot",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#adding-the-boxplot-with-geom_boxplot",
+    "title": "Visualising Distribution",
+    "section": "1.4.2 Adding the boxplot with geom_boxplot()",
+    "text": "1.4.2 Adding the boxplot with geom_boxplot()\nNext, we will add the second geometry layer using geom_boxplot() of ggplot2. This produces a narrow boxplot. We reduce the width and adjust the opacity.\n\nThe PlotThe Code Chunk\n\n\n\n\n\n\n\n\n\n\n\nCode\nggplot(exam, \n       aes(x = RACE, \n           y = ENGLISH)) +\n  stat_halfeye(adjust = 0.5,\n               justification = -0.2,\n               .width = 0,\n               point_colour = NA) +\n  geom_boxplot(width = .20,\n               outlier.shape = NA)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#adding-the-dot-plots-with-stat_dots",
+    "href": "Hands-on_Ex/Hands-on_Ex04/Hands-on_Ex04.html#adding-the-dot-plots-with-stat_dots",
+    "title": "Visualising Distribution",
+    "section": "1.4.3 Adding the Dot Plots with stat_dots()",
+    "text": "1.4.3 Adding the Dot Plots with stat_dots()\nNext, we will add the third geometry layer using stat_dots() of ggdist package. This produces a half-dotplot, which is similar to a histogram that indicates the number of samples (number of dots) in each bin. We select side = “left” to indicate we want it on the left-hand side.\n\nThe PlotThe Code Chunk\n\n\n\n\n\n\n\n\n\n\n\nCode\nggplot(exam, \n       aes(x = RACE, \n           y = ENGLISH)) +\n  stat_halfeye(adjust = 0.5,\n               justification = -0.2,\n               .width = 0,\n               point_colour = NA) +\n  geom_boxplot(width = .20,\n               outlier.shape = NA) +\n  stat_dots(side = \"left\", \n            justification = 1.2, \n            binwidth = .5,\n            dotsize = 2)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html",
+    "href": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html",
+    "title": "3 Programming Interactive Data Visualisation with R",
+    "section": "",
+    "text": "In this hands-on exercise, the learning outcome is to create an interactice data visualisation by using function provided by ggiraph and plotlyr packages."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#tooltip-effect-with-tooltip-aesthetic",
+    "href": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#tooltip-effect-with-tooltip-aesthetic",
+    "title": "3 Programming Interactive Data Visualisation with R",
+    "section": "3.4.1 Tooltip effect with tooltip aesthetic",
+    "text": "3.4.1 Tooltip effect with tooltip aesthetic\nBelow ys a code chuck to plot an interactive statistical graph by using ggiraph package. Notice that the code chunk consists of two parts. First, an ggplot object will be created. Next, girafe() of ggiraph will be used to create an interactive svg object.\n\n\nCode\np &lt;- ggplot(data=exam_data, \n       aes(x = MATHS)) +\n  geom_dotplot_interactive(\n    aes(tooltip = ID),\n    stackgroups = TRUE, \n    binwidth = 1, \n    method = \"histodot\") +\n  scale_y_continuous(NULL, \n                     breaks = NULL)\ngirafe(\n  ggobj = p,\n  width_svg = 6,\n  height_svg = 6*0.618\n)\n\n\n\n\n\n\nNotice that two steps are involved. First, an interactive version of ggplot2 geom (i.e. geom_dotplot_interactive().) will be used to create the basic graph. Then, girafe() will be used to generate an svg object to be displayed on an html page."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#displaying-multiple-information-on-tooltip",
+    "href": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#displaying-multiple-information-on-tooltip",
+    "title": "3 Programming Interactive Data Visualisation with R",
+    "section": "3.5.1 Displaying multiple information on tooltip",
+    "text": "3.5.1 Displaying multiple information on tooltip\nThe content of the tooltip can be customised by including a list object as shown in the code chunk below.\n\n\nCode\nexam_data$tooltip &lt;- c(paste0(     \n  \"Name = \", exam_data$ID,         \n  \"\\n Class = \", exam_data$CLASS)) \n\np &lt;- ggplot(data=exam_data, \n       aes(x = MATHS)) +\n  geom_dotplot_interactive(\n    aes(tooltip = exam_data$tooltip), \n    stackgroups = TRUE,\n    binwidth = 1,\n    method = \"histodot\") +\n  scale_y_continuous(NULL,               \n                     breaks = NULL)\ngirafe(\n  ggobj = p,\n  width_svg = 8,\n  height_svg = 8*0.618\n)\n\n\n\n\n\n\nThe first three lines of codes in the code chunk create a new field called tooltip. At the same time, it populates text in ID and CLASS fields into the newly created field. Next, this newly created field is used as tooltip field as shown in the code of line 7.\n3.6 Interactivity\n\n\nCode\nexam_data$tooltip &lt;- c(paste0(     \n  \"Name = \", exam_data$ID,         \n  \"\\n Class = \", exam_data$CLASS)) \n\np &lt;- ggplot(data=exam_data, \n       aes(x = MATHS)) +\n  geom_dotplot_interactive(\n    aes(tooltip = exam_data$tooltip), \n    stackgroups = TRUE,\n    binwidth = 1,\n    method = \"histodot\") +\n  scale_y_continuous(NULL,               \n                     breaks = NULL)\ngirafe(\n  ggobj = p,\n  width_svg = 8,\n  height_svg = 8*0.618\n)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#displaying-statistics-on-tooltip",
+    "href": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#displaying-statistics-on-tooltip",
+    "title": "3 Programming Interactive Data Visualisation with R",
+    "section": "3.6.2 Displaying statistics on tooltip",
+    "text": "3.6.2 Displaying statistics on tooltip\nCode chunk below shows an advanced way to customise tooltip. In this example, a function is used to compute 90% confident interval of the mean. The derived statistics are then displayed in the tooltip.\n\n\nCode\ntooltip &lt;- function(y, ymax, accuracy = .01) {\n  mean &lt;- scales::number(y, accuracy = accuracy)\n  sem &lt;- scales::number(ymax - y, accuracy = accuracy)\n  paste(\"Mean maths scores:\", mean, \"+/-\", sem)\n}\n\ngg_point &lt;- ggplot(data=exam_data, \n                   aes(x = RACE),\n) +\n  stat_summary(aes(y = MATHS, \n                   tooltip = after_stat(  \n                     tooltip(y, ymax))),  \n    fun.data = \"mean_se\", \n    geom = GeomInteractiveCol,  \n    fill = \"light blue\"\n  ) +\n  stat_summary(aes(y = MATHS),\n    fun.data = mean_se,\n    geom = \"errorbar\", width = 0.2, size = 0.2\n  )\n\n\nWarning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.\nℹ Please use `linewidth` instead.\n\n\nCode\ngirafe(ggobj = gg_point,\n       width_svg = 8,\n       height_svg = 8*0.618)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#hover-effect-with-data_id-aesthetic",
+    "href": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#hover-effect-with-data_id-aesthetic",
+    "title": "3 Programming Interactive Data Visualisation with R",
+    "section": "3.6.3 Hover effect with data_id aesthetic",
+    "text": "3.6.3 Hover effect with data_id aesthetic\nCode chunk below shows the second interactive feature of ggiraph, namely ‘data_id’.\n\n\nCode\np &lt;- ggplot(data=exam_data, \n       aes(x = MATHS)) +\n  geom_dotplot_interactive(           \n    aes(data_id = CLASS),             \n    stackgroups = TRUE,               \n    binwidth = 1,                        \n    method = \"histodot\") +               \n  scale_y_continuous(NULL,               \n                     breaks = NULL)\ngirafe(                                  \n  ggobj = p,                             \n  width_svg = 6,                         \n  height_svg = 6*0.618                      \n)                                        \n\n\n\n\n\n\nInteractivity: Elements associated with a data_id (i.e CLASS) will be highlighted upon mouse over.\nNote that the default value of the hover css is hover_css = “fill:orange;”."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#styling-hover-effect",
+    "href": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#styling-hover-effect",
+    "title": "3 Programming Interactive Data Visualisation with R",
+    "section": "3.6.4 Styling hover effect",
+    "text": "3.6.4 Styling hover effect\nIn the code chunk below, css codes are used to change the highlighting effect.\n\n\nCode\np &lt;- ggplot(data=exam_data, \n       aes(x = MATHS)) +\n  geom_dotplot_interactive(              \n    aes(data_id = CLASS),              \n    stackgroups = TRUE,                  \n    binwidth = 1,                        \n    method = \"histodot\") +               \n  scale_y_continuous(NULL,               \n                     breaks = NULL)\ngirafe(                                  \n  ggobj = p,                             \n  width_svg = 6,                         \n  height_svg = 6*0.618,\n  options = list(                        \n    opts_hover(css = \"fill: #202020;\"),  \n    opts_hover_inv(css = \"opacity:0.2;\") \n  )                                        \n)                                        \n\n\n\n\n\n\nInteractivity: Elements associated with a data_id (i.e CLASS) will be highlighted upon mouse over.\nNote: Different from previous example, in this example the ccs customisation request are encoded directly."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#combining-tooltip-and-hover-effect",
+    "href": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#combining-tooltip-and-hover-effect",
+    "title": "3 Programming Interactive Data Visualisation with R",
+    "section": "3.6.5 Combining tooltip and hover effect",
+    "text": "3.6.5 Combining tooltip and hover effect\nThere are time that we want to combine tooltip and hover effect on the interactive statistical graph as shown in the code chunk below.\n\n\nCode\np &lt;- ggplot(data=exam_data, \n       aes(x = MATHS)) +\n  geom_dotplot_interactive(              \n    aes(tooltip = CLASS, \n        data_id = CLASS),              \n    stackgroups = TRUE,                  \n    binwidth = 1,                        \n    method = \"histodot\") +               \n  scale_y_continuous(NULL,               \n                     breaks = NULL)\ngirafe(                                  \n  ggobj = p,                             \n  width_svg = 6,                         \n  height_svg = 6*0.618,\n  options = list(                        \n    opts_hover(css = \"fill: #202020;\"),  \n    opts_hover_inv(css = \"opacity:0.2;\") \n  )                                        \n)                                        \n\n\n\n\n\n\nInteractivity: Elements associated with a data_id (i.e CLASS) will be highlighted upon mouse over. At the same time, the tooltip will show the CLASS.\n3.6.6 Click effect with onclick\n‘onclick’ argument of ggiraph provides hotlink interactivity on the web. The code chunk below shown an example of ‘onclick’.\n\n\nCode\nexam_data$onclick &lt;- sprintf(\"window.open(\\\"%s%s\\\")\",\n\"https://www.moe.gov.sg/schoolfinder?journey=Primary%20school\",\nas.character(exam_data$ID))\n\np &lt;- ggplot(data=exam_data, \n       aes(x = MATHS)) +\n  geom_dotplot_interactive(              \n    aes(onclick = onclick),              \n    stackgroups = TRUE,                  \n    binwidth = 1,                        \n    method = \"histodot\") +               \n  scale_y_continuous(NULL,               \n                     breaks = NULL)\ngirafe(                                  \n  ggobj = p,                             \n  width_svg = 6,                         \n  height_svg = 6*0.618)                                        \n\n\n\n\n\n\nInteractivity: Web document link with a data object will be displayed on the web browser upon mouse click.\n\n\n\n\n\n\nWarning\n\n\n\nNote that click actions must be a string column in the dataset containing valid javascript instructions."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#coordinated-multiple-views-with-ggiraph",
+    "href": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#coordinated-multiple-views-with-ggiraph",
+    "title": "3 Programming Interactive Data Visualisation with R",
+    "section": "3.6.7 Coordinated Multiple Views with ggiraph",
+    "text": "3.6.7 Coordinated Multiple Views with ggiraph\nCoordinated multiple views methods has been implemented in the data visualisation below.\nNotice that when a data point of one of the dotplot is selected, the corresponding data point ID on the second data visualisation will be highlighted too.\nIn order to build a coordinated multiple views as shown in the example above, the following programming strategy will be used:\n\nAppropriate interactive functions of ggiraph will be used to create the multiple views.\npatchwork function of patchwork package will be used inside girafe function to create the interactive coordinated multiple views.\n\n\n\nCode\np1 &lt;- ggplot(data=exam_data, \n       aes(x = MATHS)) +\n  geom_dotplot_interactive(              \n    aes(data_id = ID),              \n    stackgroups = TRUE,                  \n    binwidth = 1,                        \n    method = \"histodot\") +  \n  coord_cartesian(xlim=c(0,100)) + \n  scale_y_continuous(NULL,               \n                     breaks = NULL)\n\np2 &lt;- ggplot(data=exam_data, \n       aes(x = ENGLISH)) +\n  geom_dotplot_interactive(              \n    aes(data_id = ID),              \n    stackgroups = TRUE,                  \n    binwidth = 1,                        \n    method = \"histodot\") + \n  coord_cartesian(xlim=c(0,100)) + \n  scale_y_continuous(NULL,               \n                     breaks = NULL)\n\ngirafe(code = print(p1 + p2), \n       width_svg = 6,\n       height_svg = 3,\n       options = list(\n         opts_hover(css = \"fill: #202020;\"),\n         opts_hover_inv(css = \"opacity:0.2;\")\n         )\n       ) \n\n\n\n\n\n\nThe data_id _aesthetic is critical to link observations between plots and the tooltip aesthetic is optional but nice to have when mouse over a point.\n3.7 Interactive Data Visualisation - plotly methods!\nPlotly’s R graphing library create interactive web graphics from ggplot2 graphs and/or a custom interface to the (MIT-licensed) JavaScript library plotly.js inspired by the grammar of graphics. Different from other plotly platform, plot.R is free and open source.\n There are two ways to create interactive graph by using plotly, they are:\n-by using plot_ly(), and -by using ggplotly()"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#creating-an-interactive-scatter-plot-plotly-method",
+    "href": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#creating-an-interactive-scatter-plot-plotly-method",
+    "title": "3 Programming Interactive Data Visualisation with R",
+    "section": "3.7.1 Creating an interactive scatter plot: plotly() method",
+    "text": "3.7.1 Creating an interactive scatter plot: plotly() method\nThe tabset below shows an example a basic interactive plot created by using plot_ly()\n\nThe PlotThe code chunk\n\n\n\n\n\n\n\n\n\n\n\n\nCode\nplot_ly(data = exam_data, \n             x = ~MATHS, \n             y = ~ENGLISH)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#working-with-visual-variable-plot_ly-method",
+    "href": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#working-with-visual-variable-plot_ly-method",
+    "title": "3 Programming Interactive Data Visualisation with R",
+    "section": "3.7.2 Working with visual variable: plot_ly() method",
+    "text": "3.7.2 Working with visual variable: plot_ly() method\nIn the code chunk below, color argument is mapped to a qualitative visual variable (i.e. RACE).\n\nThe plotThe Code Chunk\n\n\n\n\n\n\n\n\n\n\n\n\nCode\nplot_ly(data = exam_data, \n        x = ~ENGLISH, \n        y = ~MATHS, \n        color = ~RACE)\n\n\n\n\n\n3.7.3 Creating an interactive scatter plot: ggplotly() method\nThe code chunk below plots an interactive scatter plot by using ggploty().\n\nThe plotThe Code Chunk\n\n\n\n\n\n\n\n\n\n\n\n\nCode\np &lt;- ggplot(data=exam_data, \n            aes(x = MATHS,\n                y = ENGLISH)) +\n  geom_point(size=1) +\n  coord_cartesian(xlim=c(0,100),\n                  ylim=c(0,100))\nggplotly(p)"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#coordinated-mulitple-views-with-plotly",
+    "href": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#coordinated-mulitple-views-with-plotly",
+    "title": "3 Programming Interactive Data Visualisation with R",
+    "section": "3.7.4 Coordinated Mulitple Views with plotly",
+    "text": "3.7.4 Coordinated Mulitple Views with plotly\nThe creation of a coordinated linked plot by using plotly involves three steps:\nhighlight_key() of plotly package is used as shared data. two scatterplots will be created by using ggplot2 functions. lastly, subplot() of plotly package is used to place them next to each other side-by-side.\n\nThe plotThe code chunk\n\n\n\n\n\n\n\n\n\n\n\n\nCode\nd &lt;- highlight_key(exam_data)\np1 &lt;- ggplot(data=d, \n            aes(x = MATHS,\n                y = ENGLISH)) +\n  geom_point(size=1) +\n  coord_cartesian(xlim=c(0,100),\n                  ylim=c(0,100))\n\np2 &lt;- ggplot(data=d, \n            aes(x = MATHS,\n                y = SCIENCE)) +\n  geom_point(size=1) +\n  coord_cartesian(xlim=c(0,100),\n                  ylim=c(0,100))\nsubplot(ggplotly(p1),\n        ggplotly(p2))\n\n\n\n\n\nThing to learn from the code chunk:\nhighlight_key() simply creates an object of class [crosstalk::SharedData}(https://rdrr.io/cran/crosstalk/man/SharedData.html). Visit this link to learn more about crosstalk,"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#interactive-data-table-dt-package",
+    "href": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#interactive-data-table-dt-package",
+    "title": "3 Programming Interactive Data Visualisation with R",
+    "section": "3.8.1 Interactive Data Table: DT package",
+    "text": "3.8.1 Interactive Data Table: DT package\n\nA wrapper of the JavaScript Library DataTables.\nData objects in R can be rendered as HTML tables using the JavaScript library ‘DataTables’ (typically via R Markdown or Shiny).\n\n\n\nCode\nDT::datatable(exam_data, class= \"compact\")"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#linked-brushing-crosstalk-method",
+    "href": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#linked-brushing-crosstalk-method",
+    "title": "3 Programming Interactive Data Visualisation with R",
+    "section": "3.8.2 Linked brushing: crosstalk method",
+    "text": "3.8.2 Linked brushing: crosstalk method\n::: panel-tabset ## The plot"
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#the-code-chunk-4",
+    "href": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#the-code-chunk-4",
+    "title": "3 Programming Interactive Data Visualisation with R",
+    "section": "The Code Chunk",
+    "text": "The Code Chunk\n\n\nCode\nd &lt;- highlight_key(exam_data) \np &lt;- ggplot(d, \n            aes(ENGLISH, \n                MATHS)) + \n  geom_point(size=1) +\n  coord_cartesian(xlim=c(0,100),\n                  ylim=c(0,100))\n\ngg &lt;- highlight(ggplotly(p),        \n                \"plotly_selected\")  \n\ncrosstalk::bscols(gg,               \n                  DT::datatable(d), \n                  widths = 5)\n\n\nThings to learn from the code chunk:\n\nhighlight() is a function of plotly package. It sets a variety of options for brushing (i.e., highlighting) multiple plots. These options are primarily designed for linking multiple plotly graphs, and may not behave as expected when linking plotly to another htmlwidget package via crosstalk. In some cases, other htmlwidgets will respect these options, such as persistent selection in leaflet.\nbscols() is a helper function of crosstalk package. It makes it easy to put HTML elements side by side. It can be called directly from the console but is especially designed to work in an R Markdown document. Warning: This will bring in all of Bootstrap!."
+  },
+  {
+    "objectID": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#ggiraph",
+    "href": "Hands-on_Ex/Hands-on_Ex03(a)/Hands-on_Ex03(a).html#ggiraph",
+    "title": "3 Programming Interactive Data Visualisation with R",
+    "section": "3.9.1 ggiraph",
+    "text": "3.9.1 ggiraph\nThis link provides online version of the reference guide and several useful articles. Use this link to download the pdf version of the reference guide.\n\nHow to Plot With Ggiraph\nInteractive map of France with ggiraph\nCustom interactive sunbursts with ggplot in R\nThis link provides code example on how ggiraph is used to interactive graphs for Swiss Olympians - the solo specialists."
   }
 ]
