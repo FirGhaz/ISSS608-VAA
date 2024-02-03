@@ -200,6 +200,7 @@ To achieve the balance between aesthetics and clarity these enhancements can be 
   7. The fill colour of the Histogram bins were made with high transparent fill effect, this is to allow easier reference of all the major and minor grid lines for x and y axes.
   
 ```{r}
+#| warning: false
 P7 <- ggplot(data= stu_qqq_SG_selectedV,
        aes(x= GENDER, y= Maths)) +
   geom_violin(color = "#459395", size = 0.6, fill= "#459395", alpha = 0.4) +
