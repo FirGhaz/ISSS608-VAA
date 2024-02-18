@@ -1,0 +1,209 @@
+---
+title: "Be Weatherwise or Otherwise"
+subtitle: "[Take Home Exercise 3]"
+author: "FirGhaz"
+date: 16/02/2024
+date modified: last-modified
+format:
+  html:
+    code-fold: true
+    code-summary: "code block"
+    code-tools: false
+    code-copy: true
+---
+
+# 3.1 Context Setting 
+
+Past climate trends over Singapore have shown an increase in surface air temperatures and the frequency of heavy rainfall over the past few decades.  However, the climate system is complex and the past trends and the magnitude of the change will not necessarily continue into the future.  Climate projections using tools like climate modelling is thus necessary to project the future climate for planning and adapting to climate change.
+
+# 3.2 Overview
+
+![](images/Climate_change.jpg){width="100%" height="100%"}
+
+According to an office report as shown in the infographic above, Daily mean temperature are projected to increase by 1.4 to 4.6, and the contrast between the wet months (November to January) and dry month (February and June to September) is likely to be more pronounced.
+
+We will apply visual interactivity and visualising uncertainty methods to validate the claims presented above.
+
+# 3.3 The Task
+
+In this [*Take Home Exercise 3*](https://isss608-ay2023-24jan.netlify.app/take-home_ex/th_ex03), we will be creating an analystics-driven data visualisation on;
+
+  (a) historical daily temperature and (b) rainfall data from the [*Meteorological Service Singapore*](http://www.weather.gov.sg/home/) website,
+  
+  (b) records of a month of the year 1983, 1993, 2003, 2013 and 2023 and create an analytics-driven data visualisation and,
+  
+  (c) apply appropriate interactive techniques to enhance the user experience in data discovery and/or visual story-telling.
+
+# 3.3 Preparing Data and R Packages
+
+In this exercise, the author have decided to select the December month data set from Changi Metereological records from the years 1983, 1993, 2003, 2013 and 2023. The data is complete for the rainfall records, however for the temperature records, the data started from 2003 onwards.
+
+For the purpose of this exercise, the following R packages will be used, they are:
+
+-   tidyverse, a family of R packages for data science process,
+-   plotly for creating interactive plot,
+-   gganimate for creating animation plot,
+-   DT for displaying interactive html table,
+-   crosstalk for for implementing cross-widget interactions (currently, linked brushing and filtering), and
+-   ggdist for visualising distribution and uncertainty.
+
+```{r}
+pacman::p_load(ggplot2, ggbeeswarm, gghalves, ungeviz, plotly, crosstalk,
+               DT, ggdist, ggridges,
+               colorspace, gganimate, tidyverse, ggthemes)
+```
+
+## 3.3.1 Data Importing and Merger 
+
+The historical records for the year will be imported and merged.
+
+
+```{r}
+library(readr)
+library(dplyr)
+#| warning = FALSE
+
+data_1983 <- read_csv("data/DAILYDATA_S24_198312.csv", locale = locale(encoding = "Latin1"))
+data_1993 <- read_csv("data/DAILYDATA_S24_199312.csv", locale = locale(encoding = "Latin1"))
+data_2003 <- read_csv("data/DAILYDATA_S24_200312.csv", locale = locale(encoding = "Latin1"))
+data_2013 <- read_csv("data/DAILYDATA_S24_201312.csv", locale = locale(encoding = "Latin1"))
+data_2023 <- read_csv("data/DAILYDATA_S24_202312.csv")
+```
+
+Merging code chunks for Temperature, as shown below:
+
+## 3.3.2 Temperature Records
+```{r}
+#| warning = FALSE
+temp_columns <- c("Station","Year","Day","Mean Temperature (°C)", "Maximum Temperature (°C)", "Minimum Temperature (°C)")
+
+temp_table <- bind_rows(
+  select(data_1983, all_of(temp_columns))%>% mutate(Year = as.character(Year)),
+  select(data_1993, all_of(temp_columns))%>% mutate(Year = as.character(Year)),
+  select(data_2003, all_of(temp_columns))%>% mutate(Year = as.character(Year)),
+  select(data_2013, all_of(temp_columns))%>% mutate(Year = as.character(Year)),
+  select(data_2023, all_of(temp_columns))%>% mutate(Year = as.character(Year)),
+)
+```
+
+# 3.4 Data Visualisation of Rainfall Records
+
+## 3.4.1 The Plot
+
+Utilising three key features of `stat_halfeye()`, `geom_boxplot` and `geom_dotplot` to study onto to the given data. 
+
+```{r}
+#| warning = FALSE
+ggplot(temp_table, aes(x = Year, y = `Mean Temperature (°C)`, fill = Year)) +
+  stat_halfeye(
+    adjust = 0.4, 
+    position = position_nudge(x = 0.2), 
+    color = NA, 
+    alpha = 0.4
+  ) +
+  geom_boxplot(
+    width = 0.2, 
+    outlier.shape = NA, 
+    position = position_dodge(width = 0.5), 
+    alpha = 0.6, 
+    color = "gray40", 
+    fill = "white"
+  ) +
+  geom_dotplot(
+    binaxis = "y", 
+    stackdir = "down",
+    position = position_dodge(width = 0.5),
+    binwidth = 0.25, 
+    dotsize = 0.2
+  ) +
+  scale_y_continuous(limits = c(23.5, 28.5)) +
+  scale_fill_brewer(palette = "Pastel1") +
+  theme_minimal(base_size = 8) +
+  theme(
+    legend.position = "right",
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.title = element_blank(),
+    plot.title = element_text(hjust = 0.5, size = 16),
+    plot.subtitle = element_text(hjust = 0.5, size = 12)
+  ) +
+  labs(
+    y = "Mean Temperature (°C)", 
+    x = "Year", 
+    title = "Mean Temperature by Year",
+    subtitle = "Rising Mean Temperature over the decade"
+  ) +
+  guides(fill = guide_legend(title.position = "top", title.hjust = 0.5))
+
+```
+::: callout-idea
+
+Based on the static EDA, we can see that the overall mean temperature for the selected year have increased across four decades. Through the `stat_halfeye' it can be seen that the (1) the range of fluctuating mean temps over the years have condensed significantly and (2) peaks (Frequencies of Higher Mean Temp) are compressed to be lesser but sharper in scale (i.e: 2023 has 1 main peak as compare to 1983 - 2003, with a higher peak).
+
+:::
+
+## 3.4.2 Adding Interactivity
+
+Through the interactivity, the `tooltip`, provides precise interactivity to give the viewer more information on the points/dots denoted above. By hovering the cursor, the points will display the information with the (1) day of the month (Dec), (2) Min and (3) Max Temp.
+
+```{r}
+#| warning = FALSE
+
+library(ggplot2)
+library(ggiraph)
+library(patchwork)
+tooltip_css <- "background-color:white; #<<
+font-style:bold; color:black;" #<<
+
+temp_table$ID <- seq_len(nrow(temp_table))
+temp_table$tooltip <- paste("Year:", temp_table$Year,"<br>Day:", temp_table$Day, "<br>MeanTemp:", temp_table$`Mean Temperature (°C)`, "(°C)", "<br>MaxTemp:", temp_table$`Maximum Temperature (°C)`,"(°C)",  "<br>MinTemp:", temp_table$`Minimum Temperature (°C)`,"(°C)") 
+
+  
+# First interactive plot for Mean Temperature
+p1 <- ggplot(data=temp_table, aes(x = `Year`, y = `Mean Temperature (°C)`, tooltip = tooltip, data_id = as.character(ID))) +
+  geom_point_interactive(aes(color = `Year`), size = 2) +
+  scale_color_brewer(palette = "Pastel1") +
+  theme_minimal() +
+  labs(title = "Interactive Plot of Mean Temperature")
+
+
+
+girafe(                                  
+  ggobj = p1,                             
+  width_svg = 6,                         
+  height_svg = 6*0.618,
+  options = list(    #<<
+    opts_tooltip(    #<<
+      css = tooltip_css)) #<<
+)           
+
+
+```
+
+
+```{r}
+
+# Adding an interactive boxplot to the plot
+p1_with_boxplot <- ggplot(data = temp_table, aes(x = Year, y = `Mean Temperature (°C)`, group = Year, fill = as.factor(Year), tooltip = tooltip, data_id = as.character(ID))) +
+  geom_boxplot_interactive(alpha = 0.6, outlier.shape = NA, width =0.1) + # Interactive boxplot
+  geom_point_interactive(aes(color = as.factor(Year)), size = 1, position = position_jitter(width = 0.2, height = 0)) + 
+  scale_fill_brewer(palette = "Pastel1") + # Color setup
+  scale_color_brewer(palette = "Pastel1") + # Ensure consistent coloring for points
+  theme_minimal() +
+  labs(title = "Interactive Plot of Mean Temperature") +
+  theme(legend.position = "none")
+
+# Create the interactive girafe object for the plot with boxplot and points
+girafe_plot <- girafe(
+  ggobj = p1_with_boxplot,
+  width_svg = 6,
+  height_svg = 6 * 0.618,
+  options = list(opts_tooltip(css = tooltip_css))
+)
+
+# Print or render the girafe_plot in your R Markdown document or Shiny application
+print(girafe_plot)
+
+```
+
+
+

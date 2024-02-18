@@ -479,9 +479,9 @@ ggplot(exam,
                outlier.shape = NA) +
   stat_dots(side = "left", 
             justification = 1.2, 
-            binwidth = .5,
+            binwidth = .4,
             dotsize = 1.5) +
   coord_flip() +
-  theme_economist()
+  theme_wsj()
 ```
 :::

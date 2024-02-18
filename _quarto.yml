@@ -31,6 +31,16 @@ website:
           href: "Hands-on_Ex/Hands-on_Ex04(c)/Hands-on_Ex04(c).html" 
         - text: "Hands-On Exercise 4(d)"
           href: "Hands-on_Ex/Hands-on_Ex04(d)/Hands-on_Ex04(d).html"
+        - text: "Hands-On Exercise 5(a)"
+          href: "Hands-on_Ex/Hands-on_Ex05(a)/Hands-on_Ex05(a).html" 
+        - text: "Hands-On Exercise 5(b)"
+          href: "Hands-on_Ex/Hands-on_Ex05(b)/Hands-on_Ex05(b).html"
+        - text: "Hands-On Exercise 5(c)"
+          href: "Hands-on_Ex/Hands-on_Ex05(c)/Hands-on_Ex05(c).html" 
+        - text: "Hands-On Exercise 5(d)"
+          href: "Hands-on_Ex/Hands-on_Ex05(d)/Hands-on_Ex05(d).html"
+        - text: "Hands-On Exercise 5(e)"
+          href: "Hands-on_Ex/Hands-on_Ex05(e)/Hands-on_Ex05(e).html"
     - text: "In-class Exercises"
       menu:
         - text: "In-Class Exercise 1"
@@ -47,9 +57,9 @@ website:
           href: "Take-home_Exercises/Take-Home_Ex01/Take-home_Exercise01.html" 
         - text: "Take-Home Exercise 2"
           href: "Take-home_Exercises/Take-Home_Ex02/Take-home_Exercise02.html" 
-      
+        - text: "Take-Home Exercise 3"
+          href: "Take-home_Exercises/Take-Home_Ex03/Take-home_Exercise03.html" 
     
-
 format:
   html:
     theme: sandstone
@@ -59,7 +69,7 @@ format:
     toc-depth: 3
     page-layout: full
     fontsize: 1em
-
+    
 editor: visual
 
 

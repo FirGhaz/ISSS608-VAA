@@ -18,16 +18,15 @@ OECD education director Andreas Schleicher shared in a BBC article that “Singa
 
 ![](images/Image2.jpeg){width="100%" height="60%"}
 
-
 # 2 Exercise Objectives
 
 The 2022 Programme for International Student Assessment (PISA) data was released on December 5, 2022. PISA global education survey every three years to assess the education systems worldwide through testing 15 year old students in the subjects of mathematics, reading, and science.
 
 In this take-home exercise, we are required to use appropriate **Exploratory Data Analysis (EDA)** methods and **ggplot2** functions to reveal:
 
-a. the distribution of Singapore students’ performance in **mathematics, reading, and science**, and
+a.  the distribution of Singapore students’ performance in **mathematics, reading, and science**, and
 
-b. the relationship between these performances with **schools, gender and socioeconomic status (SES)** of the students.
+b.  the relationship between these performances with **schools, gender and socioeconomic status (SES)** of the students.
 
 # 3 Data Sets and Preparation
 
@@ -49,7 +48,7 @@ In this exercise, we are to utilize the student questionnaire data set only.
 
 ## 3.2 Data Preparation
 
-### 3.2.1 Installing R Packages 
+### 3.2.1 Installing R Packages
 
 Installation of mulitple R packages via the use of `pacman::p_load()` function from the **pacman package**. See the code chunk below:
 
@@ -57,9 +56,10 @@ Installation of mulitple R packages via the use of `pacman::p_load()` function f
 pacman::p_load(tidyverse, haven, dplyr, plyr, ggrepel, ggthemes, knitr, kableExtra, intsvy, hrbrthemes, ggridges, ggdist, patchwork, colorspace, reshape2, scales, ggplot2, ggpol, gridExtra)
 ```
 
-### 3.2.2 Uploading & Filtering the Data Set 
+### 3.2.2 Uploading & Filtering the Data Set
 
-The students questionaire data file was uploaded as **stu_qqq_SG**. See the code chunk below: 
+The students questionaire data file was uploaded as **stu_qqq_SG**. See the code chunk below:
+
 ```{r}
 stu_qqq <- read_sas("data/cy08msp_stu_qqq.sas7bdat")
 stu_qqq_SG <- stu_qqq %>% filter(CNT =="SGP")
@@ -68,13 +68,13 @@ stu_qqq_SG <- read_rds("data/stu_qqq_SG.rds")
 head(stu_qqq_SG, 5)
 ```
 
-Focusing on the Exercise Objectives, the Data of Interests will be scoped towards selected variables. These variables are: 
+Focusing on the Exercise Objectives, the Data of Interests will be scoped towards selected variables. These variables are:
 
-a) **STRATUM**
-b) **GENDER**
-c) **IMMIGRANT STATUS**
-d) **SES STATUS** 
-e) **PV Values**
+a)  **STRATUM**
+b)  **GENDER**
+c)  **IMMIGRANT STATUS**
+d)  **SES STATUS**
+e)  **PV Values**
 
 ```{r}
 stu_qqq_SG_selectedV <- stu_qqq_SG %>% select(CNTSTUID, STRATUM, ST004D01T, IMMIG, ESCS,PV1READ:PV10READ, PV1SCIE:PV10SCIE, PV1MATH:PV10MATH)
@@ -86,18 +86,22 @@ The variables are all anchored based on each Student's **UNIQUE ID** - CNTSTUID
 
 Next, we will check for duplicates, missing values and convert data types as part of data pre-processing.
 
-**Data Health** 
-Handling duplicates
+**Data Health** Handling duplicates
+
 ```{r}
 stu_qqq_SG_selectedV[duplicated(stu_qqq_SG_selectedV),]
 ```
+
 Checking missing values
+
 ```{r}
 sum(is.na(stu_qqq_SG_selectedV))
 ```
+
 There are a total of *283 missing values* which is merely 4.2% of the overall data set hence can regarded as statistically negligible.
 
 Converting Data Types: Converting CNTSTUID & GENDER from `num` type to `chr`type as they are categorical in nature. Subsequently, renaming and recoding them to enhance data comprehension.
+
 ```{r}
 stu_qqq_SG_selectedV<- stu_qqq_SG_selectedV %>% mutate(CNTSTUID = as.character(CNTSTUID))
 
@@ -124,6 +128,7 @@ stu_qqq_SG_selectedV<- stu_qqq_SG_selectedV %>%
 Utilising the prob density and histogram, we develop the visualisation to observe the distributions and the summary stats across all subject of interests.
 
 #### *All Subjects*
+
 ```{r}
 stu_qqq_SG_selectedV <- stu_qqq_SG_selectedV %>%
   mutate(Maths = rowSums(stu_qqq_SG_selectedV[paste0('PV', c(1:10), "MATH")], 
@@ -177,6 +182,7 @@ histogram_plot <- ggplot(data = stu_qqq_SG_selectedV, aes(x = Maths)) +
 # Print the plot
 print(histogram_plot)  
 ```
+
 #### *Reading*
 
 ```{r}
@@ -198,6 +204,7 @@ histogram_plot <- ggplot(data = stu_qqq_SG_selectedV, aes(x = Reading)) +
 # Print the plot
 print(histogram_plot)  
 ```
+
 #### ***Science***
 
 ```{r}
@@ -229,20 +236,20 @@ print(histogram_plot)
     -   distribution characteristic is of a Normal Distribution,
 
     -   distribution mildly skews to the left.
-    
+
     -   From here we can deduce that just about more than half of the cohort scores above the 50% mark.
 
--   Students fair better in Math, as a subject, compared to Reading and Science.
-:::
+-   Students fair better in Math, as a subject, compared to Reading and Science. :::
 
 ## 4.2 Exploring Performance Score by Gender
 
-
 ### 4.2.1 Observations through boxplots
+
 Utilising the boxplots, we visualise the how gender fair across all subjects.
 
 ::: panel-tabset
 #### ***Math***
+
 ```{r}
 library(ggplot2)
 
@@ -267,7 +274,9 @@ ggplot(data = stu_qqq_SG_selectedV, aes(y = Maths, x = GENDER, color = GENDER)) 
        color = "Gender")
 
 ```
+
 #### ***Reading***
+
 ```{r}
 library(ggplot2)
 
@@ -291,7 +300,9 @@ ggplot(data = stu_qqq_SG_selectedV, aes(y = Reading, x = GENDER, color = GENDER)
        y = "Reading Scores",
        color = "Gender")
 ```
+
 #### ***Science***
+
 ```{r}
 library(ggplot2)
 
@@ -325,13 +336,12 @@ ggplot(data = stu_qqq_SG_selectedV, aes(y = Science, x = GENDER, color = GENDER)
 
 -   Female fair better in Reading as compared to their Male counterparts.
 
-
 ## 4.3 Exploring Performance Score by SE Index
 
 ### 4.3.1 SE Distribution by Scores
 
-**SE Distribution**
-Let's first take a look into the socioeconomic (SE) distribution to gain some insights. 
+**SE Distribution** Let's first take a look into the socioeconomic (SE) distribution to gain some insights.
+
 ```{r}
 stu_qqq_SG_selectedV <- na.omit(stu_qqq_SG_selectedV)
 ggplot(data = stu_qqq_SG_selectedV, aes(x = ESCS)) +
@@ -344,7 +354,9 @@ ggplot(data = stu_qqq_SG_selectedV, aes(x = ESCS)) +
        title = "SE Distribution", subtitle = "Left-Skewed SE Distribution")  +
   theme_tidybayes()
 ```
+
 **ESCS Index by Subject Performance**
+
 ```{r}
 cor1 <- round(cor(stu_qqq_SG_selectedV$Maths, stu_qqq_SG_selectedV$ESCS),2)
 cor2 <- round(cor(stu_qqq_SG_selectedV$Science, stu_qqq_SG_selectedV$ESCS),2)
@@ -375,26 +387,19 @@ se1/se2/se3
 ```
 
 ### 4.3.2 Insights & Observations
-- Left Skewed Distribution from the SE Index can be deduced that students with normal to high ESCS Index are more prevalent as compared to the lower ESCS index. To bring the conversation further, we can study into the distribution of native, 1st Gen and 2nd Gen by the ESCS index in the future.
 
-- Depicts a positive moderate correlation between Scores and ESCS index, hence we can infer that students with higher ESCS Index scores better in their subjects.
+-   Left Skewed Distribution from the SE Index can be deduced that students with normal to high ESCS Index are more prevalent as compared to the lower ESCS index. To bring the conversation further, we can study into the distribution of native, 1st Gen and 2nd Gen by the ESCS index in the future.
+
+-   Depicts a positive moderate correlation between Scores and ESCS index, hence we can infer that students with higher ESCS Index scores better in their subjects.
 
 # 5 Summary
 
+-   Math is the Subject that scores higher as compared to Reading and Science.
 
-- Math is the Subject that scores higher as compared to Reading and Science. 
+-   Male tends to score in both Maths and Science, while Females are comparatively higher in terms of scoring in Reading.
 
-- Male tends to score in both Maths and Science, while Females are comparatively higher in terms of scoring in Reading.
+-   There is a positive correlation between the Socioecomic Index (ESCS) and performance of students.
 
-- There is a positive correlation between the Socioecomic Index (ESCS) and performance of students.
+-   From the distribution (SE index), students with normal to high ESCS Index are more prevalent as compared to the lower ESCS index.
 
-- From the distribution (SE index), students with normal to high ESCS Index are more prevalent as compared to the lower ESCS index.
-
-- Students with higher ESCS Index tends to score better in their subjects.
-
-
-
-
-
-
-
+-   Students with higher ESCS Index tends to score better in their subjects.

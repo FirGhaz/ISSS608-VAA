@@ -190,8 +190,8 @@ Code chunk below shows an advanced way to customise tooltip. In this example, a 
 ```{r}
 tooltip <- function(y, ymax, accuracy = .01) {
   mean <- scales::number(y, accuracy = accuracy)
-  sem <- scales::number(ymax - y, accuracy = accuracy)
-  paste("Mean maths scores:", mean, "+/-", sem)
+  sem <- scales::number(ymax - y, accuracy = accuracy) #standard deviation of the mean
+  paste("Mean maths scores:", mean, "\n+/-", sem) #whenever hover the text will be pasted over the interactive output
 }
 
 gg_point <- ggplot(data=exam_data, 
@@ -220,9 +220,9 @@ Code chunk below shows the second interactive feature of ggiraph, namely 'data_i
 
 ```{r}
 p <- ggplot(data=exam_data, 
-       aes(x = MATHS)) +
+       aes(x = MATHS)) + 
   geom_dotplot_interactive(           
-    aes(data_id = CLASS),             
+    aes(tooltip = ID, data_id = CLASS),        #include in another argument     
     stackgroups = TRUE,               
     binwidth = 1,                        
     method = "histodot") +               
@@ -258,7 +258,7 @@ girafe(
   width_svg = 6,                         
   height_svg = 6*0.618,
   options = list(                        
-    opts_hover(css = "fill: #202020;"),  
+    opts_hover(css = "fill: #549549;"),  
     opts_hover_inv(css = "opacity:0.2;") 
   )                                        
 )                                        
@@ -342,10 +342,10 @@ In order to build a coordinated multiple views as shown in the example above, th
 p1 <- ggplot(data=exam_data, 
        aes(x = MATHS)) +
   geom_dotplot_interactive(              
-    aes(data_id = ID),              
+    aes(tooltip = ID, data_id = ID),              
     stackgroups = TRUE,                  
     binwidth = 1,                        
-    method = "histodot") +  
+    method = "histodoott") +  
   coord_cartesian(xlim=c(0,100)) + 
   scale_y_continuous(NULL,               
                      breaks = NULL)
@@ -353,7 +353,7 @@ p1 <- ggplot(data=exam_data,
 p2 <- ggplot(data=exam_data, 
        aes(x = ENGLISH)) +
   geom_dotplot_interactive(              
-    aes(data_id = ID),              
+    aes(tooltip = ID, data_id = ID),              
     stackgroups = TRUE,                  
     binwidth = 1,                        
     method = "histodot") + 
@@ -361,11 +361,11 @@ p2 <- ggplot(data=exam_data,
   scale_y_continuous(NULL,               
                      breaks = NULL)
 
-girafe(code = print(p1 + p2), 
+girafe(code = print(p1 + p2), # for girafe function in patchwork need to use the 'code=print' function
        width_svg = 6,
        height_svg = 3,
        options = list(
-         opts_hover(css = "fill: #202020;"),
+         opts_hover(css = "fill: #750549;"),
          opts_hover_inv(css = "opacity:0.2;")
          )
        ) 
@@ -403,7 +403,7 @@ plot_ly(data = exam_data,
 #| code-fold: show
 #| eval: false
 plot_ly(data = exam_data, 
-             x = ~MATHS, 
+             x = ~MATHS, # native plotly way of writing a code (follwoing the javascript convention)
              y = ~ENGLISH)
 ```
 :::
@@ -454,7 +454,7 @@ p <- ggplot(data=exam_data,
   geom_point(size=1) +
   coord_cartesian(xlim=c(0,100),
                   ylim=c(0,100))
-ggplotly(p)
+ggplotly(p) #wrapper and maintain the r code convention 
 ```
 
 ## The Code Chunk
