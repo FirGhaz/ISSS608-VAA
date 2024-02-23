@@ -283,6 +283,7 @@ head(temp_table_2)
 
 ```{r}
 #| warning = FALSE
+
 p <- ggplot(temp_table_2, aes(x = Year, y = `Mean Temperature (°C)`, fill = Year)) +
   stat_halfeye(
     adjust = 0.4, 
@@ -330,10 +331,15 @@ p <- ggplot(temp_table_2, aes(x = Year, y = `Mean Temperature (°C)`, fill = Yea
   ) +
   guides(fill = guide_legend(title.position = "top", title.hjust = 0.5))
 
-
-interactive_plot <- girafe(ggobj = p)
-
-print(interactive_plot)
+girafe(                                  
+  ggobj = p,                             
+  width_svg = 6,                         
+  height_svg = 6*0.618,
+  options = list(                        
+    opts_hover(css = "fill: #963000;"),  
+    opts_hover_inv(css = "opacity:0.2;") 
+  )                                        
+)      
 
 ```
 
