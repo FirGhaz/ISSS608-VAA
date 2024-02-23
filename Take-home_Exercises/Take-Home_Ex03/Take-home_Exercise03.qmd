@@ -12,51 +12,48 @@ format:
     code-copy: true
 ---
 
-# 3.1 Context Setting 
+# 3.1 Context Setting
 
-Past climate trends over Singapore have shown an increase in surface air temperatures and the frequency of heavy rainfall over the past few decades.  However, the climate system is complex and the past trends and the magnitude of the change will not necessarily continue into the future.  Climate projections using tools like climate modelling is thus necessary to project the future climate for planning and adapting to climate change.
+Past climate trends over Singapore have shown an increase in surface air temperatures and the frequency of heavy rainfall over the past few decades. However, the climate system is complex and the past trends and the magnitude of the change will not necessarily continue into the future. Climate projections using tools like climate modelling is thus necessary to project the future climate for planning and adapting to climate change.
 
 # 3.2 Overview
 
 ![](images/Climate_change.jpg){width="100%" height="100%"}
 
-According to an office report as shown in the infographic above, Daily mean temperature are projected to increase by 1.4 to 4.6, and the contrast between the wet months (November to January) and dry month (February and June to September) is likely to be more pronounced.
+According to an office report as shown in the info-graphic above, Daily mean temperature are projected to increase by 1.4 to 4.6, and the contrast between the wet months (November to January) and dry month (February and June to September) is likely to be more pronounced.
 
-We will apply visual interactivity and visualising uncertainty methods to validate the claims presented above.
+We will apply visual interactivity and visualizing uncertainty methods to validate the claims presented above.
 
 # 3.3 The Task
 
 In this [*Take Home Exercise 3*](https://isss608-ay2023-24jan.netlify.app/take-home_ex/th_ex03), we will be creating an analystics-driven data visualisation on;
 
-  (a) historical daily temperature and (b) rainfall data from the [*Meteorological Service Singapore*](http://www.weather.gov.sg/home/) website,
-  
-  (b) records of a month of the year 1983, 1993, 2003, 2013 and 2023 and create an analytics-driven data visualisation and,
-  
-  (c) apply appropriate interactive techniques to enhance the user experience in data discovery and/or visual story-telling.
+(a) historical daily temperature and (b) rainfall data from the [*Meteorological Service Singapore*](http://www.weather.gov.sg/home/) website,
 
-# 3.3 Preparing Data and R Packages
+(b) records of a month of the year 1983, 1993, 2003, 2013 and 2023 and create an analytics-driven data visualisation and,
 
-In this exercise, the author have decided to select the December month data set from Changi Metereological records from the years 1983, 1993, 2003, 2013 and 2023. The data is complete for the rainfall records, however for the temperature records, the data started from 2003 onwards.
+(c) apply appropriate interactive techniques to enhance the user experience in data discovery and/or visual story-telling.
+
+# 3.4 Preparing Data and R Packages
+
+In this exercise, the author has decided to select the December month data set from Changi Meteorological records from the years 1983, 1993, 2003, 2013 and 2023. The data is complete for the rainfall records; however, for the temperature records, the data started from 2003 onwards. To that end, the mean temperature will be utilised for data visualisation and analysis. Other Statistical Summary will be used too.
 
 For the purpose of this exercise, the following R packages will be used, they are:
 
--   tidyverse, a family of R packages for data science process,
--   plotly for creating interactive plot,
--   gganimate for creating animation plot,
--   DT for displaying interactive html table,
--   crosstalk for for implementing cross-widget interactions (currently, linked brushing and filtering), and
--   ggdist for visualising distribution and uncertainty.
+-   `tidyverse`, a family of R packages for data science process,
+-   `plotly` for creating interactive plot,
+-   `gganimate` for creating an animation plot,
+-   DT for displaying interactive html tables,
+-   \`crosstalk\` for for implementing cross-widget interactions (currently, linked brushing and filtering), and
+-   \`ggdist\` for visualizing distribution and uncertainty.
 
 ```{r}
 pacman::p_load(ggplot2, ggbeeswarm, gghalves, ungeviz, plotly, crosstalk,
-               DT, ggdist, ggridges,
+               DT, ggdist, ggridges, GGally, parallelPlot,
                colorspace, gganimate, tidyverse, ggthemes)
 ```
 
-## 3.3.1 Data Importing and Merger 
-
 The historical records for the year will be imported and merged.
-
 
 ```{r}
 library(readr)
@@ -70,12 +67,130 @@ data_2013 <- read_csv("data/DAILYDATA_S24_201312.csv", locale = locale(encoding 
 data_2023 <- read_csv("data/DAILYDATA_S24_202312.csv")
 ```
 
-Merging code chunks for Temperature, as shown below:
+# 3.5 Merging rainfall Records
 
-## 3.3.2 Temperature Records
+Merging code chunks for rainfall, as shown below:
+
 ```{r}
 #| warning = FALSE
-temp_columns <- c("Station","Year","Day","Mean Temperature (°C)", "Maximum Temperature (°C)", "Minimum Temperature (°C)")
+rainfall_columns <- c("Station","Day","Year","Daily Rainfall Total (mm)")
+
+rainfall_table <- bind_rows(
+  select(data_1983, all_of(rainfall_columns))%>% mutate(Year = as.character(Year)),
+  select(data_1993, all_of(rainfall_columns))%>% mutate(Year = as.character(Year)),
+  select(data_2003, all_of(rainfall_columns))%>% mutate(Year = as.character(Year)),
+  select(data_2013, all_of(rainfall_columns))%>% mutate(Year = as.character(Year)),
+  select(data_2023, all_of(rainfall_columns))%>% mutate(Year = as.character(Year)),
+)
+
+print(rainfall_table)
+```
+
+## 3.5.1 Developing a Static EDA on Daily Rainfall by Day and Year
+
+`geom_point()` function under the *ggplot* package was used to plot the total rainfall (mm) on a given day by year. In this static EDA, we can observe that:
+
+1\) majority of the days by year, total rainfall (mm) was observed to be below 50mm while,
+
+2\) in the years 1983 and 2013, where the total rainfall on day 25 and day 3 were above 100mm. We can infer that these were anomalies with significantly heavy rainfall as compared to the volumes of other rainy days by year.
+
+::: callout-note
+The Static EDA has its shortcomings in terms of enhancing data appreciation. Next, we will move onto interactivity to enhance our data visualisation.
+:::
+
+```{r}
+#| warning = FALSE
+library(ggplot2)
+
+ggplot(data = rainfall_table, aes(x = Day, y = `Daily Rainfall Total (mm)`, color = factor(Year))) +
+  geom_point() +  # Add points for the daily rainfall totals
+  theme_minimal() +  # Use a minimal theme
+  labs(title = "Daily Rainfall Total (mm) by Day and Year",
+       x = "Day",
+       y = "Daily Rainfall Total (mm)",
+       color = "Year") +  # Label the axes and the legend
+  scale_color_brewer(palette = "Set1")  # Use a color palette that's easily distinguishable
+
+```
+
+## 3.5.2 Developing Interacitvity using `plotly`
+
+Leveraging on `plotly` the interactive scatter allows the reader to (1) *hover for details* (Day and Rainfall volume of the day) , (2) *select* (via cursor, legend or lasso) and (3) *compare data on hover*. For Sn (3), the function allows the reader to have a quick glance to make a quick analysis on the Daily Rainfall trends across the years. For instance, we can observe that:
+
+::: callout-Insight
+-   Day 1 and Day 2 records rainfalls on all 5 selected years, therefore we can infer that the probability of raining during the 1st two days of December will be higher (of course a larger data sample size will enhance the accuracy of this inference).
+-   Day 5, 7, 29 and 30 records the lowest rainfall over the 5 selected years, this can only be seen through the *compare data on hover* function.
+:::
+
+```{r}
+#| echo: false 
+#| warning: false
+plot_ly(data = rainfall_table, 
+        x = ~Day, 
+        y = ~`Daily Rainfall Total (mm)`,
+        color = ~factor(Year),  # This will color-code points by Year
+        type = 'scatter',
+        mode = 'markers') %>%
+  layout(title = 'Daily Rainfall Total (mm) by Day and Year',
+         xaxis = list(title = 'Day'),
+         yaxis = list(title = 'Daily Rainfall Total (mm)'))
+```
+
+## 3.5.3 Extending `plotly` further to capture Statistical Components
+
+The code chunk below, calculates the statistical summary of the scatter points which includes; (1) Total Rainfall by day, (2) Mean Rainfall by day and (3) Median Rainfall by day across all years.
+
+```{r}
+#| warning = FALSE
+library(dplyr)
+
+# Calculate summary statistics for each year
+summary_stats_by_day <- rainfall_table %>%
+  group_by(Day) %>%
+  summarise(
+    Total_Rainfall = sum(`Daily Rainfall Total (mm)`, na.rm = TRUE),
+    Mean_Rainfall = mean(`Daily Rainfall Total (mm)`, na.rm = TRUE),
+    Median_Rainfall = median(`Daily Rainfall Total (mm)`, na.rm = TRUE),
+  ) %>%
+  ungroup()
+
+```
+
+```{r}
+#| warning = FALSE
+rainfall_table_with_stats <- rainfall_table %>%
+  left_join(summary_stats_by_day, by = "Day")
+
+library(plotly)
+
+plot_ly(data = rainfall_table_with_stats, 
+        x = ~Day, 
+        y = ~`Daily Rainfall Total (mm)`,
+        color = ~factor(Year),
+        type = 'scatter',
+        mode = 'markers',
+        hoverinfo = 'text',
+        text = ~paste('Day:', Day,
+                      ', Year:', Year,
+                      '<br>Total Yearly Rainfall (mm):', Total_Rainfall,
+                      '<br>Mean Yearly Rainfall (mm):', Mean_Rainfall,
+                      '<br>Median Yearly Rainfall (mm):', Median_Rainfall)) %>%
+  layout(title = 'Daily Rainfall Total (mm) with Sum_Stats by Day ',
+         xaxis = list(title = 'Day'),
+         yaxis = list(title = 'Rainfall (mm)'))
+
+
+```
+
+Here with the stat summary, we can observe that individual points is supported by its stats summary of total, mean and median rainfall (mm) by day across the years.
+
+# 3.6 Temperature across the years
+
+## 3.6.1 Merging Temperature Records
+
+```{r}
+#| warning = FALSE
+temp_columns <- c("Station","Day","Year","Mean Temperature (°C)", "Maximum Temperature (°C)", "Minimum Temperature (°C)")
 
 temp_table <- bind_rows(
   select(data_1983, all_of(temp_columns))%>% mutate(Year = as.character(Year)),
@@ -86,18 +201,14 @@ temp_table <- bind_rows(
 )
 ```
 
-# 3.4 Data Visualisation of Rainfall Records
-
-## 3.4.1 The Plot
-
-Utilising three key features of `stat_halfeye()`, `geom_boxplot` and `geom_dotplot` to study onto to the given data. 
+Utilising three key features of `stat_halfeye()`, `geom_boxplot` and `geom_dotplot` to study onto to the given data. The code chunk below shows the static plots:
 
 ```{r}
 #| warning = FALSE
 ggplot(temp_table, aes(x = Year, y = `Mean Temperature (°C)`, fill = Year)) +
   stat_halfeye(
     adjust = 0.4, 
-    position = position_nudge(x = 0.2), 
+    position = position_nudge(x = 0.13), 
     color = NA, 
     alpha = 0.4
   ) +
@@ -107,14 +218,14 @@ ggplot(temp_table, aes(x = Year, y = `Mean Temperature (°C)`, fill = Year)) +
     position = position_dodge(width = 0.5), 
     alpha = 0.6, 
     color = "gray40", 
-    fill = "white"
+    fill = "grey93"
   ) +
   geom_dotplot(
     binaxis = "y", 
     stackdir = "down",
-    position = position_dodge(width = 0.5),
+    position = position_nudge(x = -0.13),
     binwidth = 0.25, 
-    dotsize = 0.2
+    dotsize = 0.25
   ) +
   scale_y_continuous(limits = c(23.5, 28.5)) +
   scale_fill_brewer(palette = "Pastel1") +
@@ -135,75 +246,103 @@ ggplot(temp_table, aes(x = Year, y = `Mean Temperature (°C)`, fill = Year)) +
   guides(fill = guide_legend(title.position = "top", title.hjust = 0.5))
 
 ```
+
 ::: callout-idea
-
-Based on the static EDA, we can see that the overall mean temperature for the selected year have increased across four decades. Through the `stat_halfeye' it can be seen that the (1) the range of fluctuating mean temps over the years have condensed significantly and (2) peaks (Frequencies of Higher Mean Temp) are compressed to be lesser but sharper in scale (i.e: 2023 has 1 main peak as compare to 1983 - 2003, with a higher peak).
-
+Based on the static EDA, we can see that the overall mean temperature for the selected year have increased across four decades. Through the \`stat_halfeye' it can be seen that (1) the range of fluctuating mean temps over the years has condensed significantly, (2) peaks (Frequencies of Higher Mean Temp) are compressed to be lesser but sharper in scale (i.e: 2023 has 1 main peak as compared to 1983 - 2003, with a higher peak) and (3) the number of dotplots (with binwidth=2.5) denotes the co-occurrence of a binned temperature of similar range over the given days.
 :::
 
-## 3.4.2 Adding Interactivity
+## 3.6.2 Adding Interactivity to the Temp Scale
 
-Through the interactivity, the `tooltip`, provides precise interactivity to give the viewer more information on the points/dots denoted above. By hovering the cursor, the points will display the information with the (1) day of the month (Dec), (2) Min and (3) Max Temp.
+Through the interactivity, the `tooltip`, provides precise interactivity to give the viewer more information on the points/dots denoted above. The codes below calculates other statistical components to be added back onto the `temp_table`.
+
+```{r}
+
+#| warning = FALSE
+library(ggplot2)
+library(ggiraph)
+library(RColorBrewer)
+library(dplyr)
+
+summary_stats <- temp_table %>%
+  group_by(Year) %>%
+  summarise(
+    OverallMean = mean(`Mean Temperature (°C)`, na.rm = TRUE),
+    OverallMin = min(`Mean Temperature (°C)`, na.rm = TRUE),
+    OverallMax = max(`Mean Temperature (°C)`, na.rm = TRUE),
+    Range = OverallMax - OverallMin  # Calculate the range
+  ) %>%
+  ungroup()
+
+temp_table_2 <- temp_table %>%
+  left_join(summary_stats, by = "Year")
+
+head(temp_table_2)
+
+
+```
 
 ```{r}
 #| warning = FALSE
+p <- ggplot(temp_table_2, aes(x = Year, y = `Mean Temperature (°C)`, fill = Year)) +
+  stat_halfeye(
+    adjust = 0.4, 
+    position = position_nudge(x = 0.2), 
+    color = NA, 
+    alpha = 0.4
+  ) +
+  geom_boxplot_interactive(
+    aes(
+      tooltip = paste('Mean:',`OverallMean`, '| Range:', `Range`, '<br>Max:', `OverallMax`, '| Min:', `OverallMin`), 
+      data_id = Year
+      ),
+    width = 0.2, 
+    outlier.shape = NA, 
+    position = position_dodge(width = 0.5), 
+    alpha = 0.6, 
+    color = "gray40", 
+    fill = "white"
+  ) +
+  geom_point_interactive( 
+    aes(
+      tooltip = paste('Day', `Day`, '<br>Mean Temp (°C):', `Mean Temperature (°C)`), 
+      data_id = Year
+    ),
+    position = position_nudge(x = -0.2),
+    bindwidth = 2.5,
+    size = 1.3,  # Adjust the size as per your preference
+    alpha = 0.35
+  ) +
+  scale_y_continuous(limits = c(23.5, 28.5)) +
+  scale_fill_brewer(palette = "Pastel1") +
+  theme_minimal(base_size = 8) +
+  theme(
+    legend.position = "right",
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    legend.title = element_blank(),
+    plot.title = element_text(hjust = 0.5, size = 16),
+    plot.subtitle = element_text(hjust = 0.5, size = 12)
+  ) +
+  labs(
+    y = "Mean Temperature (°C)", 
+    x = "Year", 
+    title = "Mean Temperature by Year",
+    subtitle = "Rising Mean Temperature over the decade"
+  ) +
+  guides(fill = guide_legend(title.position = "top", title.hjust = 0.5))
 
-library(ggplot2)
-library(ggiraph)
-library(patchwork)
-tooltip_css <- "background-color:white; #<<
-font-style:bold; color:black;" #<<
 
-temp_table$ID <- seq_len(nrow(temp_table))
-temp_table$tooltip <- paste("Year:", temp_table$Year,"<br>Day:", temp_table$Day, "<br>MeanTemp:", temp_table$`Mean Temperature (°C)`, "(°C)", "<br>MaxTemp:", temp_table$`Maximum Temperature (°C)`,"(°C)",  "<br>MinTemp:", temp_table$`Minimum Temperature (°C)`,"(°C)") 
+interactive_plot <- girafe(ggobj = p)
 
-  
-# First interactive plot for Mean Temperature
-p1 <- ggplot(data=temp_table, aes(x = `Year`, y = `Mean Temperature (°C)`, tooltip = tooltip, data_id = as.character(ID))) +
-  geom_point_interactive(aes(color = `Year`), size = 2) +
-  scale_color_brewer(palette = "Pastel1") +
-  theme_minimal() +
-  labs(title = "Interactive Plot of Mean Temperature")
-
-
-
-girafe(                                  
-  ggobj = p1,                             
-  width_svg = 6,                         
-  height_svg = 6*0.618,
-  options = list(    #<<
-    opts_tooltip(    #<<
-      css = tooltip_css)) #<<
-)           
-
-
-```
-
-
-```{r}
-
-# Adding an interactive boxplot to the plot
-p1_with_boxplot <- ggplot(data = temp_table, aes(x = Year, y = `Mean Temperature (°C)`, group = Year, fill = as.factor(Year), tooltip = tooltip, data_id = as.character(ID))) +
-  geom_boxplot_interactive(alpha = 0.6, outlier.shape = NA, width =0.1) + # Interactive boxplot
-  geom_point_interactive(aes(color = as.factor(Year)), size = 1, position = position_jitter(width = 0.2, height = 0)) + 
-  scale_fill_brewer(palette = "Pastel1") + # Color setup
-  scale_color_brewer(palette = "Pastel1") + # Ensure consistent coloring for points
-  theme_minimal() +
-  labs(title = "Interactive Plot of Mean Temperature") +
-  theme(legend.position = "none")
-
-# Create the interactive girafe object for the plot with boxplot and points
-girafe_plot <- girafe(
-  ggobj = p1_with_boxplot,
-  width_svg = 6,
-  height_svg = 6 * 0.618,
-  options = list(opts_tooltip(css = tooltip_css))
-)
-
-# Print or render the girafe_plot in your R Markdown document or Shiny application
-print(girafe_plot)
+print(interactive_plot)
 
 ```
 
+::: callout-Insight
+1)  Through the interactivity on the `geom_boxplot`, it can be observed that the Overall Mean and Max temperature has increased over the years with the year 2023 having the highest temperature.
+2)  It can also be observed that the range is much more condensed in the Year 2023, with that we can infer that as the Max Temp rises the Minimum temperature over the years have risen as well.
+3)  Through the intensity of the dotplot and the lumpiness of the halfeye, it can be seen that most 2023 has a 'single' condensed region unlike other years where there are mulitple peaks.
+:::
 
+# 3.7 Conclusion
 
+In Summary, the interactivity functions utilised in the Take Home Exercise allowed us to explore and gain more insights on the probability (for rainfalls) and increasing trends (for temperature). The utility of the `tooltip`, `data_ID` and functions such as comparing two or more data when hovering, enhancing data appreciation and in turns garner greater insights and inferences.

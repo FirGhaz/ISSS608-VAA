@@ -345,7 +345,7 @@ p1 <- ggplot(data=exam_data,
     aes(tooltip = ID, data_id = ID),              
     stackgroups = TRUE,                  
     binwidth = 1,                        
-    method = "histodoott") +  
+    method = "histodot") +  
   coord_cartesian(xlim=c(0,100)) + 
   scale_y_continuous(NULL,               
                      breaks = NULL)
@@ -364,9 +364,7 @@ p2 <- ggplot(data=exam_data,
 girafe(code = print(p1 + p2), # for girafe function in patchwork need to use the 'code=print' function
        width_svg = 6,
        height_svg = 3,
-       options = list(
-         opts_hover(css = "fill: #750549;"),
-         opts_hover_inv(css = "opacity:0.2;")
+       options = list(opts_hover(css = "fill: #750549;"),opts_hover_inv(css = "opacity:0.2;")
          )
        ) 
 ```
