@@ -13,11 +13,11 @@ body, h1, h2, h3, a, .btn {
 /* Changing color of navbar links */
 .navbar-nav .nav-link,
 .navbar-brand {
-    color: #FFe300 !important; /* Forces the color change, replace with your preferred color */
+    color: #ffffff !important; /* Forces the color change, replace with your preferred color */
 }
 
 /* Change color for active or hovered links */
 .navbar-nav .nav-link:hover,
 .navbar-nav .nav-link.active {
-    color:  #FFF300 !important; /* Darker shade of purple for contrast */
+    color:  #FFf900 !important; /* Darker shade of purple for contrast */
 }
