@@ -5,7 +5,7 @@
 *My journey through attaining data visualisation knowledge.*
 
 |      Stage 1: Highly Diligent and Optimistic      |               Stage 2: On Overdrive & Caffeine IV Drip               |                      Stage 3: Questioning Life Choices                      |
-|:-------------------------------------------------:|:--------------------------------------------------------------------:|:---------------------------------------------------------------------------:|
+|:-----------------:|:-----------------------:|:--------------------------:|
 | ![](images/clipboard-1594698523.gif){width="209"} | ![](images/clipboard-1364099232.gif){fig-align="center" width="150"} | ![](https://media.tenor.com/pxb2AvFHHjEAAAAi/qoobee-tired.gif){width="164"} |
 
 1.  **Highly Diligent and Optimistic**: This stage is all about the initial excitement and motivation. Students are full of energy, ready to conquer every textbook and lecture note. They're the ones sitting in the front row, taking meticulous notes and perhaps even colour-coding them for good measure.
@@ -13,5 +13,7 @@
 2.  **On Overdrive & Caffeine IV Drip**: At this point, the workload has increased, and so has the reliance on coffee or any form of caffeine. Nights become longer, sleep becomes a distant memory, and the library feels more like home than the actual dorm. The motto shifts to "I'll sleep when I'm dead" as deadlines loom closer.
 
 3.  **Questioning Life Choices:** This final stage is marked by a deep reevaluation of one's life decisions leading up to this point. The workload feels insurmountable, leading to moments of existential dread and questioning whether the subject of study is a passion or a punishment. Acceptance of one's fate becomes the coping mechanism, along with a dark sense of humour about the future.
+
+## The Workload
 
 ![](images/image4.png)

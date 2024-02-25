@@ -1,9 +1,9 @@
 ---
-title: "7 Geospatial"
-subtitle: "Hands-On Exercise 7"
+title: "7a Chloropleth Mapping with R"
+subtitle: "Hands-On Exercise 7(a)"
 author: "FirGhaz"
-date: 16/01/2024
-date modified: 16/01/2024
+date: 23/02/2024
+date modified: 23/02/2024
 execute:
   eval: true
   message: false
@@ -17,3 +17,113 @@ execute:
     code-tools: false
     code-copy: true
 ---
+
+# 7.1 Overview
+
+Choropleth mapping involves the symbolisation of enumeration units, such as countries, provinces, states, counties or census units, using area patterns or graduated colors. For example, a social scientist may need to use a choropleth map to portray the spatial distribution of aged population of Singapore by Master Plan 2014 Subzone Boundary.
+
+In this chapter, you will learn how to plot functional and truthful choropleth maps by using an R package called [**tmap**](https://cran.r-project.org/web/packages/tmap/) package.
+
+It is advisable for you to read the functional description of each function before using them.
+
+# 7.2 Getting Started
+
+In this hands-on exercise, the key R package use is [**tmap**](https://cran.r-project.org/web/packages/tmap/) package in R. Beside **tmap** package, four other R packages will be used. They are:
+
+-   [**readr**](https://readr.tidyverse.org/) for importing delimited text file,
+
+-   [**tidyr**](https://tidyr.tidyverse.org/) for tidying data,
+
+-   [**dplyr**](https://dplyr.tidyverse.org/) for wrangling data and
+
+-   [**sf**](https://cran.r-project.org/web/packages/sf/) for handling geospatial data.
+
+Among the four packages, **readr**, **tidyr** and **dplyr** are part of **tidyverse** package.
+
+The code chunk below will be used to install and load these packages in RStudio.\\
+
+```{r}
+pacman::p_load(sf, tmap, tidyverse)
+```
+
+::: callout-Note
+Notice that, we only need to install tidyverse instead of readr, tidyr and dplyr individually.
+:::
+
+# 7.3 Importing Data
+
+## 7.3.1 The Data
+
+Two data set will be used to create the choropleth map. They are:
+
+-   Master Plan 2014 Subzone Boundary (Web) (i.e. `MP14_SUBZONE_WEB_PL`) in ESRI shapefile format. It can be downloaded at [data.gov.sg](https://data.gov.sg/) This is a geospatial data. It consists of the geographical boundary of Singapore at the planning subzone level. The data is based on URA Master Plan 2014.
+
+-   Singapore Residents by Planning Area / Subzone, Age Group, Sex and Type of Dwelling, June 2011-2020 in csv format (i.e. `respopagesextod2011to2020.csv`). This is an aspatial data file. It can be downloaded at [Department of Statistics, Singapore](https://www.singstat.gov.sg/) Although it does not contain any coordinates values, but it’s PA and SZ fields can be used as unique identifiers to geocode to `MP14_SUBZONE_WEB_PL` shapefile.
+
+## 7.3.2 Importing Geospatial Data into R
+
+The code chunk below uses the *st_read()* function of **sf** package to import `MP14_SUBZONE_WEB_PL` shapefile into R as a simple feature data frame called `mpsz`.
+
+```{r}
+mpsz <- st_read(dsn = "data/geospatial",
+                layer = "MP14_SUBZONE_WEB_PL")
+```
+
+You can examine the content of `mpsz` by using the code chunk below.
+
+```{r}
+mpsz
+```
+
+## 7.3.3 Importing Attribute Data into R
+
+Next, we will import *respopagsex2011to2020.csv* file into RStudio and save the file into an R dataframe called *popagsex*.
+
+The task will be performed by using *read_csv()* function of **readr** package as shown in the code chunk below.
+
+```{r}
+popdata <- read_csv("data/aspatial/respopagesextod2011to2020.csv")
+```
+
+## 7.3.4 Data Preparation 
+
+Before a thematic map can be prepared, you are required to prepare a data table with year 2020 values. The data table should include the variables PA, SZ, YOUNG, ECONOMY ACTIVE, AGED, TOTAL, and DEPENDENCY.
+
+-   YOUNG: age group 0 to 4 until age group 20 to 24,
+
+-   ECONOMY ACTIVE: age group 25-29 until age group 60-64,
+
+-   AGED: age group 65 and above,
+
+-   TOTAL: all age groups, and
+
+-   DEPENDENCY: the ratio between young and aged against the economy active group
+
+### 7.3.4.1 Data Wrangling
+
+The following data wrangling and transformation functions will be used:
+
+-   *pivot_wider()* of **tidyr** package, and
+
+-   *mutate()*, *filter()*, *group_by()* and *select()* of **dplyr** package
+
+```{r}
+popdata2020 <- popdata %>%
+  filter(Time == 2020) %>%
+  group_by(PA, SZ, AG) %>%
+  summarise(`POP` = sum(`Pop`)) %>%
+  ungroup() %>%
+  pivot_wider(names_from=AG, 
+              values_from=POP) %>%
+  mutate(YOUNG = rowSums(.[3:6])
+         +rowSums(.[12])) %>%
+mutate(`ECONOMY ACTIVE` = rowSums(.[7:11])+
+rowSums(.[13:15]))%>%
+mutate(`AGED`=rowSums(.[16:21])) %>%
+mutate(`TOTAL`=rowSums(.[3:21])) %>%  
+mutate(`DEPENDENCY` = (`YOUNG` + `AGED`)
+/`ECONOMY ACTIVE`) %>%
+  select(`PA`, `SZ`, `YOUNG`, 
+       `ECONOMY ACTIVE`, `AGED`, 
+       `TOTAL`, `DEPENDENCY`)
+```

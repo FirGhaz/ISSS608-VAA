@@ -73,7 +73,7 @@ format:
     theme: Morph
     css: styles.css
     toc: true
-    toc-location: left
+    toc-location: right
     toc-depth: 3
     page-layout: full
     fontsize: 1em
