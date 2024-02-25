@@ -331,7 +331,7 @@ bscols(widths = c(4,8),
 ```
 :::
 
-# 4.4 Visualising Uncertainty: ggdist package 
+# 4.4 Visualising Uncertainty: ggdist package
 
 ggdist is an R package that provides a flexible set of ggplot2 geoms and stats designed especially for visualising distributions and uncertainty.
 

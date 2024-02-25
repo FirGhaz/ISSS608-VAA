@@ -59,7 +59,7 @@ The historical records for the year will be imported and merged.
 library(readr)
 library(dplyr)
 #| warning = FALSE
-
+#| echo = FALSE
 data_1983 <- read_csv("data/DAILYDATA_S24_198312.csv", locale = locale(encoding = "Latin1"))
 data_1993 <- read_csv("data/DAILYDATA_S24_199312.csv", locale = locale(encoding = "Latin1"))
 data_2003 <- read_csv("data/DAILYDATA_S24_200312.csv", locale = locale(encoding = "Latin1"))

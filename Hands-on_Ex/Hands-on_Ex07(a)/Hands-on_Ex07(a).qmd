@@ -1,0 +1,19 @@
+---
+title: "7 Geospatial"
+subtitle: "Hands-On Exercise 7"
+author: "FirGhaz"
+date: 16/01/2024
+date modified: 16/01/2024
+execute:
+  eval: true
+  message: false
+  echo: true
+  freeze: true
+  warning: false
+  format:
+  html:
+    code-fold: true
+    code-summary: "code block"
+    code-tools: false
+    code-copy: true
+---
