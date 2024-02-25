@@ -10,8 +10,12 @@ format:
     code-copy: true
 ---
 
-# ![](images/About_Firghaz.png){width="51"} The Dilemma
+#  
+
+![](images/About_Firghaz.png){fig-align="center" width="465"}
+
+# The Dilemma
 
 *That was me at the start of the ADD \| DROP period. Ouh well, Hi \*Firdaus\* here! Thrilled to be on this VAA journey, under the stewardship of Prof Kam! 😅*
 
-![](images/Dilemma.png){fig-align="center" width="26%"}
+![](images/Dilemma.png){fig-align="center" width="19%"}
