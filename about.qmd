@@ -1,5 +1,5 @@
 ---
-title: "About Me"
+title: "About FirGhaz"
 date: 01/13/2024
 date-modified: last-modified
 format:
@@ -9,13 +9,9 @@ format:
     code-tools: true
     code-copy: true
 ---
-                             The Dilemma
-                             
-            That was me at the start of the ADD | DROP period. 
-                    Ouh well, hi guys Firdaus here! 
-    Thrilled to be in this VAA journey, under the stewardship of Prof Kam ;)
 
-![](images/Dilemma.png){width="30%" height="80%"}
+# ![](images/About_Firghaz.png){width="51"} The Dilemma
 
+*That was me at the start of the ADD \| DROP period. Ouh well, Hi \*Firdaus\* here! Thrilled to be on this VAA journey, under the stewardship of Prof Kam! 😅*
 
-
+![](images/Dilemma.png){fig-align="center" width="26%"}
