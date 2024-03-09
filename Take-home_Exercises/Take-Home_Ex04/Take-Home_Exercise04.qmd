@@ -1,0 +1,613 @@
+---
+title: "Big Mac Index Choropleth and Time Series"
+subtitle: "Take Home Exercise 04"
+author: "FirGhaz"
+date: 02/03/2024
+date modified: last modified
+execute:
+  eval: true
+  message: false
+  echo: true
+  freeze: true
+  warning: false
+  format:
+  html:
+    code-fold: true
+    code-summary: "code block"
+    code-tools: false
+    code-copy: true
+---
+
+# 1 Load Packages and Data
+
+```{r}
+pacman::p_load(ggrepel, patchwork, 
+               ggthemes, hrbrthemes,
+               ggdist, ggridges,
+               colorspace, gridExtra,
+               tidyverse, tmap, sf, tmaptools, dplyr, tibble, dplyr) 
+```
+
+Importing data
+
+```{r}
+big_mac <- read_csv("data/countries_with_complete_data.csv")
+```
+
+# 2 Choro Pleth
+
+```{r}
+bmgeo <- st_read(dsn = "data/geospatial",
+                layer = "TM_WORLD_BORDERS-0.3")
+bmgeo
+```
+```{r}
+data("World")
+```
+
+```{r}
+wmpb_World <- World %>% 
+  select(-HPI, -inequality, -footprint, -life_exp, -well_being, -gdp_cap_est)
+wmpb_World
+```
+
+```{r}
+wmpb_World_BMI <- wmpb_World %>% left_join(big_mac,
+                          by = c("name" = "country"))
+```
+
+```{r}
+library(dplyr)
+
+wmpb_World_BMI <- wmpb_World_BMI %>%
+  #filter(year == 2020) %>% 
+  group_by(name) %>%
+  filter(
+    any(!is.na(currency_code)) & 
+    any(!is.na(bmi_localprice)) & 
+    any(!is.na(bmi_usd_price)) & 
+    any(!is.na(export_usd)) & 
+    any(!is.na(import_usd)) & 
+    any(!is.na(GDP)) & 
+    any(!is.na(gdp_per_capita)) & 
+    any(!is.na(gdp_per_employed)) & 
+    any(!is.na(inflation)) & 
+    any(!is.na(year))
+  ) %>%
+  ungroup()
+
+```
+
+```{r}
+tmap_mode("view")
+
+tm <- tm_shape(wmpb_World_BMI) +
+  tm_polygons("bmi_usd_price", id = "name", popup.vars = c("Big Mac Index(USD)" = "bmi_usd_price", 
+                                                       "Inflation" = "inflation", 
+                                                       "Population Density" = "pop_est_dens", 
+                                                       "GDP per Employed" = "gdp_per_employed",
+                                                       "BMI local Price" = "bmi_localprice",
+                                                       "Econonic Status" = "economy",
+                                                       "Income" = "income_grp"),
+            popup.format = list(pop_est_dens = list(digits = 1), gdp_per_employed = list(digits = 0), inflation = list(digits = 1)
+  )) +
+  tm_layout()
+
+tm
+#qtm(wmpb_World_BMI_2020, 
+   #fill = "usd_price")
+```
+
+
+
+```{r}
+tm_shape(wmpb_World_BMI) +
+  tm_fill("bmi_usd_price",
+          style = "quantile",
+          palette = "Blues",
+          thres.poly = 0) + 
+  tm_facets(by="income_grp", 
+            free.coords=TRUE, 
+            drop.shapes=FALSE) +
+  tm_layout(legend.show = FALSE,
+            title.position = c("center", "right"), 
+            title.size = 20) +
+  tm_borders(alpha = 0.5)
+```
+
+
+```{r}
+tm_shape(wmpb_World_BMI) +
+  tm_fill("bmi_usd_price",
+          style = "quantile",
+          palette = "Blues",
+          legend.hist = TRUE, 
+          legend.is.portrait = TRUE,
+          legend.hist.z = 0.1,
+          thres.poly = 0) +  
+  tm_facets(by="economy", 
+            free.coords=TRUE, 
+            drop.shapes=FALSE) +
+  tm_layout(legend.show = FALSE,
+            title.position = c("center", "right"), 
+            title.size = 20) +
+  tm_borders(alpha = 0.5)
+ tm_layout(legend.position = c("bottom", "bottom"))
+```
+
+
+```{r}
+tm_shape(wmpb_World_BMI) +
+tm_bubbles(col = "purple",scale = 2,
+           size = "bmi_usd_price",
+           border.col = "black",
+           border.lwd = 3, alpha = 0.5)
+```
+
+
+
+```{r}
+var <- wmpb_World_BMI$bmi_usd_price
+  
+percent <- c(0,.01,.1,.5,.9,.99,1)
+quantiles <- quantile(var,percent)
+print(quantiles)
+```
+
+```{r}
+get.var <- function(var_name, wmpb_World_BMI) {
+  # Assuming 'var_name' is a string representing the variable name to extract
+  v <- wmpb_World_BMI[[var_name]] %>% 
+    as.numeric()
+  return(v)
+}
+```
+
+
+```{r}
+library(tmap)
+tmap_mode("plot")
+tmap_options(legend.width = 0.25) # Adjusts the width of the legend area
+
+# Define the function
+percentmap <- function(var_name, wmpb_World_BMI, legtitle=NA, mtitle="Percentile Map") {
+  percent <- c(0, .01, .1, .5, .9, .99, 1)
+  var <- get.var(var_name, wmpb_World_BMI)
+  bperc <- quantile(var, percent)
+  
+  tm_shape(wmpb_World_BMI) +
+    tm_fill(var_name,
+            title = legtitle,
+            breaks = bperc,
+            palette = "Greens",
+            legend.hist = TRUE) +
+    tm_borders() +
+    tm_layout(main.title = mtitle, 
+              main.title.position = "center",
+              legend.position = c("left", "bottom")) -> tm
+  
+  print(tm)
+}
+
+# Execute the function
+percentmap("bmi_usd_price", wmpb_World_BMI, legtitle = "Percentile", mtitle = "BMI USD Percentile Map")
+
+```
+
+```{r}
+ggplot(data = wmpb_World_BMI,
+       aes(x = "",
+           y = bmi_usd_price)) +
+  geom_boxplot()
+  geom_dotplot()
+```
+
+
+```{r}
+boxbreaks <- function(v,mult=1.5) {
+  qv <- unname(quantile(v))
+  iqr <- qv[3] - qv[1]
+  upfence <- qv[3] + mult * iqr
+  lofence <- qv[1] - mult * iqr
+  # initialize break points vector
+  bb <- vector(mode="numeric",length=6)
+  # logic for lower and upper fences
+  if (lofence < qv[1]) {  # no lower outliers
+    bb[1] <- lofence
+    bb[2] <- floor(qv[1])
+  } else {
+    bb[2] <- lofence
+    bb[1] <- qv[1]
+  }
+  if (upfence > qv[4]) { # no upper outliers
+    bb[6] <- upfence
+    bb[5] <- ceiling(qv[4])
+  } else {
+    bb[5] <- upfence
+    bb[6] <- qv[4]
+  }
+  bb <- sort(bb)
+  bb[2:4] <- qv[1:3]
+  return(bb)
+}
+```
+
+
+```{r}
+get.var <- function(vname,df) {
+  v <- df[vname] %>% st_set_geometry(NULL)
+  v <- unname(v[,1])
+  return(v)
+}
+```
+
+
+```{r}
+get.var <- function(vname, df) {
+  # This assumes 'vname' is the name of the variable to extract,
+  # and 'df' is the data frame or sf object without geometry.
+  v <- df[[vname]] %>% as.numeric()  # Extract as vector and ensure it's numeric
+  return(v)
+}
+library(sf)  # Assuming you're working with sf objects
+library(dplyr)  # For the pipe operator
+
+var <- na.omit(get.var("bmi_usd_price", wmpb_World_BMI))
+bb <- boxbreaks(var)
+print(bb)
+```
+
+
+```{r}
+boxmap <- function(vnam, df, 
+                   legtitle=NA,
+                   mtitle="Box Map",
+                   mult=1.5){
+  var <- get.var(vnam,df)
+  bb <- boxbreaks(var)
+  tm_shape(df) +
+    tm_polygons() +
+  tm_shape(df) +
+     tm_fill(vnam,title=legtitle,
+             breaks=bb,
+             palette="Oranges",
+          labels = c("lower outlier", 
+                     "< 25%", 
+                     "25% - 50%", 
+                     "50% - 75%",
+                     "> 75%", 
+                     "upper outlier"))  +
+  tm_borders() +
+  tm_layout(main.title = mtitle, 
+            title.position = c("left",
+                               "top"))
+}
+```
+
+```{r}
+tmap_mode("view")
+boxmap("bmi_usd_price", wmpb_World_BMI)+
+  tm_facets(by="continent", 
+            free.coords=TRUE, 
+            drop.shapes=FALSE) 
+```
+
+
+# 3 Time-Series using ARIMA (AutoRegressive Integrated Moving Average)
+
+The ARIMA model is specified by three parameters: (p, d, q), where:
+
+p = is the order of the autoregressive part, d = is the degree of first differencing involved, q = is the order of the moving average part.
+
+In the context of Big Mac Index and other econometric variables, we leverage on ARIMA models to forecast future values of the Big Mac Index based on its historical data from 2002 - 2021. We will project the value of `bmi_usd_price` to 2030.
+
+## 3.1 Calling out Forecast Packages
+
+```{r}
+library(forecast)
+library(tibble)
+library(dplyr)
+```
+
+## 3.2 Filter Data to Time Series Object
+
+```{r}
+uk_data <- big_mac %>%
+  filter(country == "United Kingdom", year >= 2002, year <= 2022) %>%
+  arrange(year) %>%
+  select(year, bmi_usd_price)
+
+# Convert to ts object
+uk_ts <- ts(uk_data$bmi_usd_price, start = 2002, end = 2021, frequency = 2)
+```
+
+## 3.3 Model Fitting using `auto.arima`
+
+Use the auto.arima function to automatically select the best ARIMA model based on AIC or BIC.
+
+-   Lower AIC or BIC values indicate a better-fitting model.
+-   AIC focuses on the goodness of fit but can suffer from overfitting.
+-   BIC adds a penalty term for the number of parameters in the model, which can result in choosing simpler models than AIC.
+
+```{r}
+library(forecast)
+
+# The auto.arima function will search through different ARIMA models 
+fit <- auto.arima(uk_ts)
+
+# the summary of the fitted model which includes the AIC and BIC values
+summary(fit)
+
+# compare AIC and BIC manually if needed
+aic_value <- fit$aic
+bic_value <- fit$bic
+
+# Print the AIC and BIC values
+cat("AIC:", aic_value, "\n")
+cat("BIC:", bic_value, "\n")
+
+fit_bic <- auto.arima(uk_ts, ic = "bic")
+
+# Print summary of the model selected based on BIC
+summary(fit_bic)
+
+```
+
+ACF and PACF plots identify whether an *AR, MA, or ARMA* model will be more appropriate:
+
+**AR (Autoregressive) model**: The Partial Autocorrelation Function (PACF) plot would show a significant spike at the lag corresponding to the order of the AR term (p), and then it would cut off, meaning other spikes should not be significant. The Autocorrelation Function (ACF) plot would show a more gradual decline.
+
+**MA (Moving Average) model**: The Autocorrelation Function (ACF) plot would show a significant spike at the lag corresponding to the order of the MA term (q), and then it would cut off. The Partial Autocorrelation Function (PACF) would show a more gradual decline.
+
+**ARMA (Autoregressive Moving Average) model**: Both ACF and PACF plots show a more complex pattern, with neither cutting off abruptly, indicating a mixture of AR and MA behaviours.
+
+To determine the specific AR or MA orders, it would typically look for the number of lags before the plot crosses the significance boundary (the blue dashed lines). Spikes that go beyond this boundary are considered significant.
+
+When you're looking at your ACF and PACF plots, consider the following:
+
+If there are a few significant spikes in the PACF followed by non-significant ones, and the ACF tails off, consider an AR model with the order determined by the number of significant spikes. If there are a few significant spikes in the ACF followed by non-significant ones, and the PACF tails off, consider an MA model with the order determined by the number of significant spikes. If both the ACF and PACF show a complex pattern without a clear cutoff, an ARMA model might be needed, where it would need to experiment with different orders to find the best fit.
+
+```{r}
+# Load the necessary library
+library(forecast)
+
+# Assuming uk_ts is your time series object
+# Plot the ACF
+acf(uk_ts)
+
+# Plot the PACF
+pacf(uk_ts)
+```
+
+## 3.4 Forecasting and plotting
+
+Forecasting the `bmi_usd_price` up to 2030
+
+```{r}
+# Load the necessary libraries
+library(forecast)
+
+# Read in your time series data
+uk_ts <- ts(uk_data$bmi_usd_price, start = 2002, end = 2021, frequency = 1)
+
+# Fit an ARIMA model using auto.arima
+auto_fit <- auto.arima(uk_ts)
+
+# Forecast from 2021 to 2030
+forecast_length <- 2030 - max(time(uk_ts))
+forecast_result <- forecast(auto_fit, h=forecast_length)
+
+# Plot the forecast with actual data
+plot(forecast_result)
+lines(uk_ts, type="o", col='blue')
+```
+
+In the context of ARIMA models, the **`order`** argument specifies the order of the model as a triplet of parameters (p, d, q):
+
+1.  **p**: The number of autoregressive (AR) terms. It represents the number of lags of the dependent variable that are used as predictors. For instance, if p is 3, the predictors for x(t) will be x(t−1),x(t−2), and x(t−3).
+
+2.  **d**: The degree of differencing. It indicates the number of times the data have had past values subtracted. Differencing is used to make the series stationary, which is a requirement for many statistical modelling methods.
+
+3.  **q**: The number of moving average (MA) terms. This parameter is associated with the number of lagged forecast errors in the prediction equation. For example, if q is 2, the prediction of x(t) will be adjusted by the forecast errors made on the two previous predictions x(t−1) and x(t−2).
+
+So when **`order=c(1,1,1) is in use`**, it specifies an ARIMA model with:
+
+-   1 AR term (p=1)
+
+-   1 degree of differencing (d=1)
+
+-   1 MA term (q=1)
+
+The choice of these parameters is critical as they define the structure of the time series model you are trying to fit. The ARIMA model attempts to describe the autocorrelations in the data with these parameters.
+
+```{r}
+# If you want to manually specify the model, fit it like so:
+manual_fit <- Arima(uk_ts, order=c(2,1,8))
+
+
+
+# And forecast manually specified model from 2021 to 2030
+manual_forecast <- forecast(manual_fit, h=forecast_length, level=c(90, 95))
+
+# Plot the manual forecast
+plot(manual_forecast)
+lines(uk_ts, type="o", col='red') 
+```
+
+Adding a slope/gradient to the forecast and the Confidence Interval L: 90% + U:95%
+
+
+```{r}
+# Fit a linear model to your time series data
+trend_model <- lm(uk_ts ~ time(uk_ts))
+
+# If you want to manually specify the model, fit it like so:
+manual_fit <- Arima(uk_ts, order=c(2,1,8))
+
+# And forecast manually specified model from 2021 to 2030
+manual_forecast <- forecast(manual_fit, h=forecast_length, level=c(90, 95))
+
+lower_90 <- manual_forecast$lower[,1]  # 90% confidence interval lower bound
+upper_90 <- manual_forecast$upper[,1]  # 90% confidence interval upper bound
+lower_95 <- manual_forecast$lower[,2]  # 95% confidence interval lower bound
+upper_95 <- manual_forecast$upper[,2]  # 95% confidence interval upper bound
+
+# To display these values, you could use a data frame
+confidence_intervals <- data.frame(
+  Time = time(manual_forecast$mean),
+  Lower_90 = lower_90,
+  Upper_90 = upper_90,
+  Lower_95 = lower_95,
+  Upper_95 = upper_95
+)
+
+print(confidence_intervals)
+# Plot the manual forecast
+plot(manual_forecast, main = "UK's Forecasted BMI value with CI",  # Add a title
+     xlab = "Year",  # Label for the x-axis
+     ylab = "BMI_USDprice",  # Label for the y-axis
+     col = "blue",  # Color for the forecast line
+     type = "n",
+     lwd = 1,  # Width of the forecast line
+     cex.lab = 0.8,  # Size of axis labels
+     cex.axis = 0.8,  # Size of axis tick labels
+     cex.main = 1) 
+lines(manual_forecast$mean, col = "blue", lwd = 2)
+points(uk_ts, pch = 19, col = "red")
+lines(uk_ts, type="o", col='red')
+
+# Add a linear trend line to the plot
+abline(trend_model$coefficients, col="grey")
+legend("topleft", legend = c("Forecast", "Historical Data", "Trend Line"), col = c("blue", "red", "darkgrey"), lty = 1, lwd = 0.5, pch = c(NA, 19, NA))
+
+# Get the slope (gradient) of the linear model
+slope <- coef(trend_model)["time(uk_ts)"]
+
+# Add the slope value as text on the plot
+# You can adjust the x and y coordinates and the text size (cex) as needed
+text(x = mean(time(uk_ts)), y = max(uk_ts), labels = paste("Gradient:", round(slope, 3)), pos = 3, cex = 0.8)
+
+x_offset <- 16
+
+ci_x <- c(time(manual_forecast$mean), rev(time(manual_forecast$mean)))
+ci_y <- c(manual_forecast$lower[,2], rev(manual_forecast$upper[,2]))
+polygon(ci_x, ci_y, col = rgb(0, 1, 1, alpha = 0.1), border = NA)
+```
+```{r}
+library(plotly)
+# Assuming manual_forecast, trend_model, and uk_ts are already defined
+
+# Convert uk_ts to a data frame for plotly (if it's not already)
+uk_ts_df <- data.frame(Time = as.numeric(time(uk_ts)), Value = as.numeric(uk_ts))
+
+# Create base plot with plotly
+p <- plot_ly() %>%
+  add_lines(data = uk_ts_df, x = ~Time, y = ~Value, name = "Historical Data", line = list(color = 'red')) %>%
+  add_lines(x = time(manual_forecast$mean), y = manual_forecast$mean, name = "Forecast", line = list(color = 'blue')) %>%
+  add_ribbons(x = time(manual_forecast$mean), ymin = manual_forecast$lower[,2], ymax = manual_forecast$upper[,2], name="95% CI", line = list(color = 'transparent'), fillcolor = 'rgba(0, 0, 255, 0.1)') %>%
+  layout(title = "UK's Forecasted BMI value with CI", xaxis = list(title = "Year"), yaxis = list(title = "BMI_USDprice"))
+
+# Add trend line - calculate points based on the linear model coefficients
+trend_line_df <- data.frame(Time = c(min(uk_ts_df$Time), max(uk_ts_df$Time)))
+trend_line_df$Trend <- coef(trend_model)["(Intercept)"] + coef(trend_model)["time(uk_ts)"] * trend_line_df$Time
+
+# Add trend line to the plot
+p <- p %>% add_lines(data = trend_line_df, x = ~Time, y = ~Trend, name = "Trend Line", line = list(color = 'grey'))
+
+# Optionally, add annotations for the slope and CI labels
+# Note: Adjust the coordinates (x, y) based on your data's range
+p <- p %>%
+  layout(annotations = list(
+    list(x = mean(uk_ts_df$Time), y = max(uk_ts_df$Value), text = paste("Gradient:", round(slope, 3)), showarrow = F),
+    list(x = max(uk_ts_df$Time), y = min(manual_forecast$lower[length(manual_forecast$mean),2]), text = paste("Lower 95%: Mean", round(manual_forecast$lower[length(manual_forecast$mean),2], 2)), showarrow = F),
+    list(x = max(uk_ts_df$Time), y = max(manual_forecast$upper[length(manual_forecast$mean),2]), text = paste("Upper 95%: Mean", round(manual_forecast$upper[length(manual_forecast$mean),2], 2)), showarrow = F)
+  ))
+
+# Render the plot
+p
+
+```
+
+
+## 3.5 Residual Testing
+
+### 3.5.1 Checking Normality through `Shapiro.Test`
+
+```{r}
+# Assuming 'fit' is your fitted ARIMA model
+residuals <- residuals(manual_fit)
+
+# Plot histogram
+hist(residuals, breaks = 30, main = "Histogram and Density Plot of Residuals", xlab = "Residuals", col = "skyblue", border = "white", probability = TRUE)
+
+# Overlay density plot
+lines(density(residuals), col = "red", lwd = 2)
+
+```
+```{r}
+# Shapiro-Wilk normality test
+shapiro.test(residuals)
+```
+W: This is the test statistic value, where W ranges from 0 to 1. A value of 1 indicates perfect normality. 
+
+p-value = 0.8108: A common threshold for significance is 0.05. If the p-value is less than 0.05, we reject the null hypothesis and conclude that the data do not come from a normally distributed population. If the p-value is greater than 0.05.
+
+In this result, with a p-value of 0.8108, there is strong evidence to suggest that residuals are normally distributed.
+
+### 3.5.2 Using QQ-plot 
+
+A Q-Q (quantile-quantile) plot compares the distribution of residuals to a normal distribution.
+
+```{r}
+library(car)
+
+# Create Q-Q plot with statistical annotations
+qqPlot(residuals(manual_fit), main="Q-Q Plot of Residuals", 
+       ylab="Sample Quantiles", 
+       las=1)
+
+
+```
+### 3.5.3 Checking for autocorrelation at any given lags
+
+The Ljung-Box test provides a p-value that can be used to determine whether there is significant evidence of autocorrelation at any of the lags tested.
+
+```{r}
+# Perform the Ljung-Box test and store the result
+lb_test <- Box.test(residuals(fit), type="Ljung-Box")
+
+# Print the test statistic and p-value
+cat("Ljung-Box test statistic:", lb_test$statistic, "\n")
+cat("P-value:", lb_test$p.value, "\n")
+
+```
+In the context of the Ljung-Box test, a higher p-value is generally considered better when using it to check the residuals of a time series model for randomness or lack of autocorrelation. The Ljung-Box test is a type of statistical test that is used to determine if there are significant autocorrelations at lag in the residuals of a time series model.
+
+- *Higher p-value* (typically > 0.05): Suggests that the residuals are random, indicating that the model has adequately captured the information in the data. In other words, there is no evidence of significant autocorrelation at any of the tested lags, and the model fits well.
+
+- *Lower p-value* (typically ≤ 0.05): Suggests that there is significant autocorrelation in the residuals that the model has not captured. This can indicate that the model could be improved, either by adding more terms or by considering a different model structure.
+
+Therefore, we can observe that the p-value is above 0.138 and hence we can reject the null hypothesis that there is a autocorrelation. This outcome would suggest that our model is capturing the underlying patterns in the data well, and the residuals are essentially white noise, as desired.
+
+
+```{r}
+# Plotting ACF of residuals
+Acf(residuals(manual_fit), main='ACF of Residuals')
+
+# Conducting the Ljung-Box test
+Box.test(residuals(manual_fit), lag = log(length(residuals(fit))))
+
+```
+
+For ACF plot of residuals, the goal is to see no pattern and have all bars within the confidence interval, indicating that the residuals are random (white noise) and the model has done a good job of capturing the underlying patterns in the data. 
+
+If there is significant autocorrelations, there is a need to revise the model by adjusting its parameters or by considering additional explanatory variables.
+
+
+
+:::callout-info
+For the purpose of Shiny App, all Countries will run ARIMA with the option for the viewer to select the (1) model fit criteria, (2) parameters and (3) residual checks to see if the model suffers from overfitting or autocorellation.
+:::
+
+
+
