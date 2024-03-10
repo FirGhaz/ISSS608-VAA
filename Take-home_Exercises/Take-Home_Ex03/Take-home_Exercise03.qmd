@@ -292,9 +292,6 @@ p <- ggplot(temp_table_2, aes(x = Year, y = `Mean Temperature (°C)`, fill = Yea
     alpha = 0.4
   ) +
   geom_boxplot(
-    aes(
-      tooltip = paste('Mean:',"OverallMean", '| Range:', "Range", '<br>Max:', "OverallMax", '| Min:', "OverallMin"), 
-      data_id = Year),
     width = 0.2, 
     outlier.shape = NA, 
     position = position_dodge(width = 0.5), 
@@ -339,7 +336,8 @@ g <- girafe(
     opts_hover_inv(css = "opacity:0.2;") 
   )                                        
  ) 
-print(g)
+
+g
 ```
 
 ::: callout-Insight
