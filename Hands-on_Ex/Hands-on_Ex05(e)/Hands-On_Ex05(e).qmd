@@ -68,7 +68,6 @@ realis2018_grouped <- realis2018 %>%
 Students who are new to *dplyr* methods should consult [`Introduction to dplyr`](https://cran.r-project.org/web/packages/dplyr/vignettes/dplyr.html) before moving on to the next section.
 :::
 
-
 ## 5.3.3 Grouped Summaries without Pipe
 
 Code Chunk Below:
