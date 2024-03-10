@@ -34,7 +34,7 @@ Importing data
 big_mac <- read_csv("data/countries_with_complete_data.csv")
 ```
 
-# 2 Choro Pleth
+# 2 ChoroPleth
 
 ```{r}
 bmgeo <- st_read(dsn = "data/geospatial",

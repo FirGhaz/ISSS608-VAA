@@ -50,7 +50,7 @@ For the purpose of this exercise, the following R packages will be used, they ar
 ```{r}
 pacman::p_load(ggplot2, ggbeeswarm, gghalves, ungeviz, plotly, crosstalk,
                DT, ggdist, ggridges, GGally, parallelPlot,
-               colorspace, gganimate, tidyverse, ggthemes)
+               colorspace, gganimate, tidyverse, ggthemes, ggiraph)
 ```
 
 The historical records for the year will be imported and merged.
@@ -291,11 +291,10 @@ p <- ggplot(temp_table_2, aes(x = Year, y = `Mean Temperature (°C)`, fill = Yea
     color = NA, 
     alpha = 0.4
   ) +
-  geom_boxplot_interactive(
+  geom_boxplot(
     aes(
-      tooltip = paste('Mean:',`OverallMean`, '| Range:', `Range`, '<br>Max:', `OverallMax`, '| Min:', `OverallMin`), 
-      data_id = Year
-      ),
+      tooltip = paste('Mean:',"OverallMean", '| Range:', "Range", '<br>Max:', "OverallMax", '| Min:', "OverallMin"), 
+      data_id = Year),
     width = 0.2, 
     outlier.shape = NA, 
     position = position_dodge(width = 0.5), 
@@ -331,16 +330,16 @@ p <- ggplot(temp_table_2, aes(x = Year, y = `Mean Temperature (°C)`, fill = Yea
   ) +
   guides(fill = guide_legend(title.position = "top", title.hjust = 0.5))
 
-girafe(                                  
-  ggobj = p,                             
+g <- girafe(                                  
+ ggobj = p,                             
   width_svg = 6,                         
   height_svg = 6*0.618,
   options = list(                        
-    opts_hover(css = "fill: #963000;"),  
+   opts_hover(css = "fill: #963000;"),  
     opts_hover_inv(css = "opacity:0.2;") 
   )                                        
-)      
-
+ ) 
+print(g)
 ```
 
 ::: callout-Insight
