@@ -335,7 +335,6 @@ g <- girafe(
     opts_hover_inv(css = "opacity:0.2;") 
   )                                        
  ) 
-
 g
 ```
 
