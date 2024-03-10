@@ -35,7 +35,7 @@ In this exercise, the learning outcomes will be in threefolds:
 ## 2.2.1 Installing and loading the requirement libraries
 
 | *R Packages* | *What does the package provide?*                                     |
-|--------------|----------------------------------------------------------------------|
+|----------------|--------------------------------------------------------|
 | `ggrepel`    | provides geoms for ggplot2 to repel overlapping text labels.         |
 | `ggthemes`   | provides some extra themes, geoms, and scales for ‘ggplot2’.         |
 | `hrbrthemes` | provides typography-centric themes and theme components for ggplot2. |
