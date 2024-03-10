@@ -1,0 +1,23 @@
+/* css styles */
+
+body, h1, h2, h3, a, .btn {
+    color:  /* Replace #yourPurpleColor with your chosen shade of purple */
+}
+
+/* Custom CSS to change the navbar color */
+.navbar {
+    background-color: #7000ff !important; /* Amethyst */
+}
+
+    
+/* Changing color of navbar links */
+.navbar-nav .nav-link,
+.navbar-brand {
+    color: #ffffff !important; /* Forces the color change, replace with your preferred color */
+}
+
+/* Change color for active or hovered links */
+.navbar-nav .nav-link:hover,
+.navbar-nav .nav-link.active {
+    color:  #FFf900 !important; /* Darker shade of purple for contrast */
+}
