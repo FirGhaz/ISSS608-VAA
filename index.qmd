@@ -1,12 +1,12 @@
-![](images/About_Firghaz.png){fig-align="center" width="445"}
+![](images/About_Firghaz.png){fig-align="center" width="440"}
 
 ## Three Stages of a Visual Analytics Student
 
 *My journey through attaining data visualisation knowledge.*
 
 |       Stage 1: Highly Diligent & Optimistic       |               Stage 2: On Overdrive & Caffeine IV Drip               |                      Stage 3: Questioning Life Choices                      |
-|:-----------------:|:-----------------------:|:--------------------------:|
-| ![](images/clipboard-1594698523.gif){width="209"} | ![](images/clipboard-1364099232.gif){fig-align="center" width="150"} | ![](https://media.tenor.com/pxb2AvFHHjEAAAAi/qoobee-tired.gif){width="164"} |
+|:-------------------:|:-----------------------:|:--------------------------:|
+| ![](images/clipboard-1594698523.gif){width="192"} | ![](images/clipboard-1364099232.gif){fig-align="center" width="138"} | ![](https://media.tenor.com/pxb2AvFHHjEAAAAi/qoobee-tired.gif){width="142"} |
 
 1.  **Highly Diligent and Optimistic**: This stage is all about the initial excitement and motivation. Students are full of energy, ready to conquer every textbook and lecture note. They're the ones sitting in the front row, taking meticulous notes and perhaps even colour-coding them for good measure.
 
@@ -16,4 +16,4 @@
 
 ## The Workload
 
-![](images/image4.png)
+![](images/image4.png){width="682"}
