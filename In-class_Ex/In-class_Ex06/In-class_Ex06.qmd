@@ -39,9 +39,8 @@ Use the code chunk below to import the AVERP.csv file into R environment.
 averp <- read_csv("data/AVERP.csv") %>%
   mutate(`Date` = dmy(`Date`))
 ```
-:::callout-Things to Learn
-By default, read_csv will import data in Date field as Character data type. dmy() of [*lubridate*](https://lubridate.tidyverse.org/) package to palse the Date field into appropriate Date data type in R.
-:::
+
+:::callout-Things to Learn By default, read_csv will import data in Date field as Character data type. dmy() of [*lubridate*](https://lubridate.tidyverse.org/) package to palse the Date field into appropriate Date data type in R. :::
 
 ## 20.2.2 Plotting my Horizon Graph
 
@@ -72,5 +71,3 @@ averp %>%
     scale_x_date(expand=c(0,0), date_breaks = "3 month", date_labels = "%b%y") +
   ggtitle('Average Retail Prices of Selected Consumer Items (Jan 2018 to Dec 2022)')
 ```
-
-
