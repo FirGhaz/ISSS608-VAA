@@ -1,4 +1,4 @@
-![](images/About_Firghaz.png){fig-align="center" width="440"}
+![](images/About_Firghaz.png){width="631"}
 
 ## Three Stages of a Visual Analytics Student
 
@@ -16,4 +16,4 @@
 
 ## The Workload
 
-![](images/image4.png){width="682"}
+![](images/image4.png){width="800"}
