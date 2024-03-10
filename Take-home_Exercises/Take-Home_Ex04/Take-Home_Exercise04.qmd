@@ -53,7 +53,7 @@ wmpb_World_BMI <- wmpb_World %>% left_join(big_mac,
 ```{r}
 library(dplyr)
 
-wmpb_World_BMI <- wmpb_World_BMI %>%
+wmpb_World_BMI_2020 <- wmpb_World_BMI %>%
   filter(year == 2020) %>% 
   group_by(name) %>%
   filter(
@@ -75,7 +75,7 @@ wmpb_World_BMI <- wmpb_World_BMI %>%
 ```{r}
 tmap_mode("view")
 
-tm <- tm_shape(wmpb_World_BMI) +
+tm <- tm_shape(wmpb_World_BMI_2020) +
   tm_polygons("bmi_usd_price", id = "name", popup.vars = c("Big Mac Index(USD)" = "bmi_usd_price", 
                                                        "Inflation" = "inflation", 
                                                        "Population Density" = "pop_est_dens", 
@@ -93,7 +93,7 @@ tm
 ```
 
 ```{r}
-tm_shape(wmpb_World_BMI) +
+tm_shape(wmpb_World_BMI_2020) +
   tm_fill("bmi_usd_price",
           style = "quantile",
           palette = "Blues",
@@ -108,7 +108,7 @@ tm_shape(wmpb_World_BMI) +
 ```
 
 ```{r}
-tm_shape(wmpb_World_BMI) +
+tm_shape(wmpb_World_BMI_2020) +
   tm_fill("bmi_usd_price",
           style = "quantile",
           palette = "Blues",
@@ -126,9 +126,8 @@ tm_shape(wmpb_World_BMI) +
  tm_layout(legend.position = c("bottom", "bottom"))
 ```
 
-
 ```{r}
-var <- wmpb_World_BMI$bmi_usd_price
+var <- wmpb_World_BMI_2020$bmi_usd_price
   
 percent <- c(0,.01,.1,.5,.9,.99,1)
 quantiles <- quantile(var,percent)
@@ -136,7 +135,7 @@ print(quantiles)
 ```
 
 ```{r}
-get.var <- function(var_name, wmpb_World_BMI) {
+get.var <- function(var_name, wmpb_World_BMI_2020) {
   # Assuming 'var_name' is a string representing the variable name to extract
   v <- wmpb_World_BMI[[var_name]] %>% 
     as.numeric()
@@ -150,12 +149,12 @@ tmap_mode("plot")
 tmap_options(legend.width = 0.25) # Adjusts the width of the legend area
 
 # Define the function
-percentmap <- function(var_name, wmpb_World_BMI, legtitle=NA, mtitle="Percentile Map") {
+percentmap <- function(var_name, wmpb_World_BMI_2020, legtitle=NA, mtitle="Percentile Map") {
   percent <- c(0, .01, .1, .5, .9, .99, 1)
-  var <- get.var(var_name, wmpb_World_BMI)
-  bperc <- quantile(var, percent)
+  var <- get.var(var_name, wmpb_World_BMI_2020)
+  bperc <- quantile(var, percent, na.rm = TRUE)
   
-  tm_shape(wmpb_World_BMI) +
+  tm_shape(wmpb_World_BMI_2020) +
     tm_fill(var_name,
             title = legtitle,
             breaks = bperc,
@@ -170,10 +169,9 @@ percentmap <- function(var_name, wmpb_World_BMI, legtitle=NA, mtitle="Percentile
 }
 
 # Execute the function
-percentmap("bmi_usd_price", wmpb_World_BMI, legtitle = "Percentile", mtitle = "BMI USD Percentile Map")
+percentmap("bmi_usd_price", wmpb_World_BMI_2020, legtitle = "Percentile", mtitle = "BMI USD Percentile Map")
 
 ```
-
 
 ```{r}
 boxbreaks <- function(v,mult=1.5) {
@@ -255,21 +253,20 @@ boxmap <- function(vnam, df,
 
 ```{r}
 tmap_mode("view")
-boxmap("bmi_usd_price", wmpb_World_BMI)+
+boxmap("bmi_usd_price", wmpb_World_BMI_2020)+
   tm_facets(by="continent", 
             free.coords=TRUE, 
             drop.shapes=FALSE) 
 ```
 
-
 ```{r}
 # First, ensure that "Seven seas (open ocean)" rows are removed.
-wmpb_World_BMI <- wmpb_World_BMI[wmpb_World_BMI$continent != "Seven seas (open ocean)", ]
+wmpb_World_BMI_2020 <- wmpb_World_BMI_2020[wmpb_World_BMI_2020$continent != "Seven seas (open ocean)", ]
 
 library(dplyr)
 
 # Extract non-spatial data
-non_spatial_data <- as.data.frame(wmpb_World_BMI)
+non_spatial_data <- as.data.frame(wmpb_World_BMI_2020)
 
 # Perform your filtering and factor level dropping
 cleaned_data <- non_spatial_data %>%
@@ -289,8 +286,6 @@ treemap(cleaned_data,
 )
 
 ```
-
-
 
 # 3 Time-Series using ARIMA (AutoRegressive Integrated Moving Average)
 
@@ -608,23 +603,5 @@ If there is significant autocorrelations, there is a need to revise the model by
 For the purpose of Shiny App, all Countries will run ARIMA with the option for the viewer to select the (1) model fit criteria, (2) parameters and (3) residual checks to see if the model suffers from overfitting or autocorellation.
 :::
 
-```{r}
-#| warning: false 
-#| code-fold: show
-#| eval: false
-bp <- globalPop %>%
-  plot_ly(x = ~Old, 
-          y = ~Young, 
-          size = ~Population, 
-          color = ~Continent,
-          sizes = c(2, 100),
-          frame = ~Year, 
-          text = ~Country, 
-          hoverinfo = "text",
-          type = 'scatter',
-          mode = 'markers'
-          ) %>%
-  layout(showlegend = FALSE)
-bp
-```
+
 
