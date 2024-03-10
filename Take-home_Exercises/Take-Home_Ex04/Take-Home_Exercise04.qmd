@@ -8,7 +8,6 @@ execute:
   eval: true
   message: false
   echo: true
-  freeze: true
   warning: false
   format:
   html:
