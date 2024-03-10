@@ -85,7 +85,7 @@ The task will be performed by using *read_csv()* function of **readr** package a
 popdata <- read_csv("data/aspatial/respopagesextod2011to2020.csv")
 ```
 
-## 7.3.4 Data Preparation 
+## 7.3.4 Data Preparation
 
 Before a thematic map can be prepared, you are required to prepare a data table with year 2020 values. The data table should include the variables PA, SZ, YOUNG, ECONOMY ACTIVE, AGED, TOTAL, and DEPENDENCY.
 
@@ -351,7 +351,7 @@ tm_shape(mpsz_pop2020)+
 
 Notice that the colour scheme has been reversed.
 
-## 7.4.5 Map Layouts 
+## 7.4.5 Map Layouts
 
 Map layout refers to the combination of all map elements into a cohesive map. Map elements include, among others, the objects to be mapped, the title, the scale bar, the compass, margins and aspect ratios. Colour settings and data classification methods covered in the previous section relate to the palette, and break-points are used to affect how the map looks.
 
