@@ -16,25 +16,24 @@ format:
 
 This document serves as a submission for Take-home Exercise 2 as required by the course ISSS608 Visual Analytics and Applications.
 
-In this exercise, we aim to apply the different data visualization design practices and principles and improve on the Take-home Exercise 1 output of a fellow classmate. Context for Exercise 1 as shown below. 
+In this exercise, we aim to apply the different data visualization design practices and principles and improve on the Take-home Exercise 1 output of a fellow classmate. Context for Exercise 1 as shown below.
 
-**Task Context**
-  _OECD education director Andreas Schleicher shared in a BBC article that “Singapore managed to achieve excellence without wide differences between children from wealthy and disadvantaged families.” (2016) Furthermore, several Singapore’s Minister for Education also started an “every school a good school” slogan. The general public, however, strongly believes that there are still disparities that exist, especially between the elite schools and neighborhood school, between students from families with higher socioeconomic status and those with relatively lower socioeconomic status and immigration and non-immigration families_**.
+**Task Context** *OECD education director Andreas Schleicher shared in a BBC article that “Singapore managed to achieve excellence without wide differences between children from wealthy and disadvantaged families.” (2016) Furthermore, several Singapore’s Minister for Education also started an “every school a good school” slogan. The general public, however, strongly believes that there are still disparities that exist, especially between the elite schools and neighborhood school, between students from families with higher socioeconomic status and those with relatively lower socioeconomic status and immigration and non-immigration families*\*\*.
 
-**Task 1 Objectives**
-  _The exercise task take-home exercise 1 are: to use appropriate **Exploratory Data Analysis (EDA)** methods and **ggplot2** functions to reveal (1) Singapore students’ performance in **mathematics, reading, and science** and (2) relationship between these performances with **schools, gender and socioeconomic status (SES)** of the students._
-  
+**Task 1 Objectives** *The exercise task take-home exercise 1 are: to use appropriate **Exploratory Data Analysis (EDA)** methods and **ggplot2** functions to reveal (1) Singapore students’ performance in **mathematics, reading, and science** and (2) relationship between these performances with **schools, gender and socioeconomic status (SES)** of the students.*
 
 # 2. Data Preparation and Package Installations
 
 ## 2.1 Installation of packages following the code chunk below:
+
 ```{r}
 pacman::p_load(tidyverse, haven, dplyr, plyr, ggrepel, ggthemes, knitr, kableExtra, intsvy, hrbrthemes, ggridges, ggdist, patchwork, colorspace, reshape2, scales, ggplot2, ggpol, gridExtra)
 ```
 
-## 2.2 Importing the data 
+## 2.2 Importing the data
 
 Importing data set and filtering data from Singapore Students only.
+
 ```{r}
 stu_qqq <- read_sas("data/cy08msp_stu_qqq.sas7bdat")
 stu_qqq_SG <- stu_qqq %>% filter(CNT =="SGP")
@@ -42,6 +41,7 @@ write_rds(stu_qqq_SG,"data/stu_qqq_SG.rds")
 stu_qqq_SG <- read_rds("data/stu_qqq_SG.rds")
 head(stu_qqq_SG, 5)
 ```
+
 ## 2.3 Data Wrangling
 
 ```{r}
@@ -62,39 +62,39 @@ stu_qqq_SG_selectedV<- stu_qqq_SG_selectedV %>%
   mutate(IMMIG = recode(IMMIG, '1' = 'NATIVE', '2' = '2ND GEN', '3' = '1ST GEN'))
 ```
 
-
-
 # 3. Critique Example 1 - Distribution of Students Performance across the three subjects
 
 ## 3.1 Initial Visualisation Outlook
+
 The first example we look at a visualisation example of Average PV values across frequency below:
 
 ![](image/Critique_1.png){width="80%" height="60%"}
 
 **Intended Viz's Proposition**
 
-In this visualisation, the author created a Histogram with a Box plot to show the Average PVs versus Frequency across 3 subjects. It was a good attempt to show the readers the distribution skews, the statistical mean (with the red dot) and, possibly the outliers' stretch to determine min|max range within each subjects.
+In this visualisation, the author created a Histogram with a Box plot to show the Average PVs versus Frequency across 3 subjects. It was a good attempt to show the readers the distribution skews, the statistical mean (with the red dot) and, possibly the outliers' stretch to determine min\|max range within each subjects.
 
 ## 3.2 Potential Enhancements
 
-To achieve the balance between aesthetics and clarity a few enhancements can be made: 
+To achieve the balance between aesthetics and clarity a few enhancements can be made:
 
-  1. To view the skewness of the distribution with accuracy, we *must maintain the aspect ratio of the plots produced*. This implies that patchwork function is not recommended as it will compress the aspect ratio making the scale of the axes inaccurate. 
-  
-  2. The X Axis should be represented accurate as the Average of PVs in each subject. while the Y Axis should be the score 
-  
-  3. We can also explore to include the *Statistical Summary of Mean and Median values* and the lines corresponding to it and input a legend on the top right for quick reference.
-  
-  4. Bin width was selected at 20. This allows the balance of appeal (avoiding too many vertical lines) while still balancing the clarity of the shape of the distribution shown.
-  
-  5. The *Grid* panels, major and minor lines were designed to be subtle-ly more apparent so that it can provide quick reference to x/y axis for the various bins
-  
-  6. Both axes to start from '0' to give an accurate representation of each bin.
-  
-  7. The fill colour of the Histogram bins were made with high transparent fill effect, this is to allow easier reference of all the major and minor grid lines for x and y axes.
+1.  To view the skewness of the distribution with accuracy, we *must maintain the aspect ratio of the plots produced*. This implies that patchwork function is not recommended as it will compress the aspect ratio making the scale of the axes inaccurate.
+
+2.  The X Axis should be represented accurate as the Average of PVs in each subject. while the Y Axis should be the score
+
+3.  We can also explore to include the *Statistical Summary of Mean and Median values* and the lines corresponding to it and input a legend on the top right for quick reference.
+
+4.  Bin width was selected at 20. This allows the balance of appeal (avoiding too many vertical lines) while still balancing the clarity of the shape of the distribution shown.
+
+5.  The *Grid* panels, major and minor lines were designed to be subtle-ly more apparent so that it can provide quick reference to x/y axis for the various bins
+
+6.  Both axes to start from '0' to give an accurate representation of each bin.
+
+7.  The fill colour of the Histogram bins were made with high transparent fill effect, this is to allow easier reference of all the major and minor grid lines for x and y axes.
 
 ::: panel-tabset
 # **MATH**
+
 ```{r}
 #| warning: false 
 stu_qqq_SG_selectedV <- stu_qqq_SG_selectedV %>%
@@ -127,7 +127,9 @@ maths_plot <- maths_plot +
 
 print(maths_plot)
 ```
+
 # **READING**
+
 ```{r}
 #| warning: false 
 reading_plot <- ggplot(stu_qqq_SG_selectedV, aes(x = Reading)) +
@@ -149,7 +151,9 @@ reading_plot <- reading_plot +
 
 print(reading_plot)
 ```
+
 # **SCIENCE**
+
 ```{r}
 #| warning: false 
 science_plot <- ggplot(stu_qqq_SG_selectedV, aes(x = Science)) +
@@ -173,32 +177,35 @@ print(science_plot)
 
 ```
 :::
+
 # 4. Critique Example 2 - Distribution of Student Performances by Gender
 
 ## 4.1 Initial Intended Visualisation Outlook
+
 Next, we look at a visualisation example of Distribution of Student Performances by Gender:
 
 ![](image/Critique_2.png){width="70%" height="60%"}
+
 **Intended Viz's Proposition**
 
-In this visualisation, the author created boxplots to show the Reading PVs across 3 subjects by Gender. 
+In this visualisation, the author created boxplots to show the Reading PVs across 3 subjects by Gender.
 
 ## 4.2 Potential Enhancements
 
-To achieve the balance between aesthetics and clarity these enhancements can be made: 
+To achieve the balance between aesthetics and clarity these enhancements can be made:
 
-  1. Y axis must be accurately represented across all subjects. This will give a more coherent representation of the means and stats median across the 3 subjects.
-  
-  3. We can also explore to include the *Statistical Summary of Mean and Median values* and the lines corresponding to it and input a legend on the top right for quick reference.
-  
-  4. A violin plot can be utilised in the background to give a sense of the distribution and range of the performance within each gender and subject domains.
-  
-  5. The *Grid* panels, major and minor lines were designed to be subtle-ly more apparent so that it can provide quick reference to x/y axis for the various bins
-  
-  6. Both axes to start from '0' to give an accurate representation of each bin.
-  
-  7. The fill colour of the Histogram bins were made with high transparent fill effect, this is to allow easier reference of all the major and minor grid lines for x and y axes.
-  
+1.  Y axis must be accurately represented across all subjects. This will give a more coherent representation of the means and stats median across the 3 subjects.
+
+2.  We can also explore to include the *Statistical Summary of Mean and Median values* and the lines corresponding to it and input a legend on the top right for quick reference.
+
+3.  A violin plot can be utilised in the background to give a sense of the distribution and range of the performance within each gender and subject domains.
+
+4.  The *Grid* panels, major and minor lines were designed to be subtle-ly more apparent so that it can provide quick reference to x/y axis for the various bins
+
+5.  Both axes to start from '0' to give an accurate representation of each bin.
+
+6.  The fill colour of the Histogram bins were made with high transparent fill effect, this is to allow easier reference of all the major and minor grid lines for x and y axes.
+
 ```{r}
 #| warning: false
 P7 <- ggplot(data= stu_qqq_SG_selectedV,
@@ -286,6 +293,4 @@ P9 <- P9 +
 
 # 5. My Take-Aways
 
-This exercise facilitates my understanding with regards to the importance of balancing aestheticness vs clarity. Utilising the right visualizations is imperative to ensure that the target audience is captivated and well-informed of the insights gained by the data visualisation. Moving ahead, I am looking forward to making interactive visualisation that can garner deeper insights as the target audience fondle more with the visualisation developed. 
-
-
+This exercise facilitates my understanding with regards to the importance of balancing aestheticness vs clarity. Utilising the right visualizations is imperative to ensure that the target audience is captivated and well-informed of the insights gained by the data visualisation. Moving ahead, I am looking forward to making interactive visualisation that can garner deeper insights as the target audience fondle more with the visualisation developed.

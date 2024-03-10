@@ -1,47 +1,5 @@
 [
   {
-    "objectID": "index.html#three-stages-of-a-visual-analytics-student",
-    "href": "index.html#three-stages-of-a-visual-analytics-student",
-    "title": "ISS608",
-    "section": "Three Stages of a Visual Analytics Student",
-    "text": "Three Stages of a Visual Analytics Student\nMy journey through attaining data visualisation knowledge.\n\n\n\n\n\n\n\n\nStage 1: Highly Diligent & Optimistic\nStage 2: On Overdrive & Caffeine IV Drip\nStage 3: Questioning Life Choices\n\n\n\n\n\n\n\n\n\n\n\nHighly Diligent and Optimistic: This stage is all about the initial excitement and motivation. Students are full of energy, ready to conquer every textbook and lecture note. They’re the ones sitting in the front row, taking meticulous notes and perhaps even colour-coding them for good measure.\nOn Overdrive & Caffeine IV Drip: At this point, the workload has increased, and so has the reliance on coffee or any form of caffeine. Nights become longer, sleep becomes a distant memory, and the library feels more like home than the actual dorm. The motto shifts to “I’ll sleep when I’m dead” as deadlines loom closer.\nQuestioning Life Choices: This final stage is marked by a deep reevaluation of one’s life decisions leading up to this point. The workload feels insurmountable, leading to moments of existential dread and questioning whether the subject of study is a passion or a punishment. Acceptance of one’s fate becomes the coping mechanism, along with a dark sense of humour about the future."
-  },
-  {
-    "objectID": "index.html#the-workload",
-    "href": "index.html#the-workload",
-    "title": "ISS608",
-    "section": "The Workload",
-    "text": "The Workload"
-  },
-  {
-    "objectID": "about.html",
-    "href": "about.html",
-    "title": "About FirGhaz",
-    "section": "",
-    "text": "The Dilemma\nThat was me at the start of the ADD | DROP period. Ouh well, Hi *Firdaus* here! Thrilled to be on this VAA journey, under the stewardship of Prof Kam! 😅"
-  },
-  {
-    "objectID": "In-class_Ex/In-class_Ex06/In-class_Ex06.html",
-    "href": "In-class_Ex/In-class_Ex06/In-class_Ex06.html",
-    "title": "In-class Exercise 6 : Horizon Plot",
-    "section": "",
-    "text": "A horizon graph is an analytical graphical method specially designed for visualising large numbers of time-series. It aims to overcome the issue of visualising highly overlapping time-series as shown in the figure below."
-  },
-  {
-    "objectID": "In-class_Ex/In-class_Ex06/In-class_Ex06.html#import-data",
-    "href": "In-class_Ex/In-class_Ex06/In-class_Ex06.html#import-data",
-    "title": "In-class Exercise 6 : Horizon Plot",
-    "section": "20.2.1 Import Data",
-    "text": "20.2.1 Import Data\nFor the purpose of this hands-on exercise, Average Retail Prices Of Selected Consumer Items will be used.\nUse the code chunk below to import the AVERP.csv file into R environment.\n\naverp &lt;- read_csv(\"data/AVERP.csv\") %&gt;%\n  mutate(`Date` = dmy(`Date`))\n\n:::callout-Things to Learn By default, read_csv will import data in Date field as Character data type. dmy() of lubridate package to palse the Date field into appropriate Date data type in R. :::"
-  },
-  {
-    "objectID": "In-class_Ex/In-class_Ex06/In-class_Ex06.html#plotting-my-horizon-graph",
-    "href": "In-class_Ex/In-class_Ex06/In-class_Ex06.html#plotting-my-horizon-graph",
-    "title": "In-class Exercise 6 : Horizon Plot",
-    "section": "20.2.2 Plotting my Horizon Graph",
-    "text": "20.2.2 Plotting my Horizon Graph\nNext, the code chunk below will be used to plot the horizon graph.\n\naverp %&gt;% \n  filter(Date &gt;= \"2018-01-01\") %&gt;%\n  ggplot() +\n  geom_horizon(aes(x = Date, y=Values), \n               origin = \"midpoint\", \n               horizonscale = 6)+\n  facet_grid(`Consumer Items`~.) +\n    theme_few() +\n  scale_fill_hcl(palette = 'RdBu') +\n  theme(panel.spacing.y=unit(0, \"lines\"), strip.text.y = element_text(\n    size = 5, angle = 0, hjust = 0),\n    legend.position = 'none',\n    axis.text.y = element_blank(),\n    axis.text.x = element_text(size=7),\n    axis.title.y = element_blank(),\n    axis.title.x = element_blank(),\n    axis.ticks.y = element_blank(),\n    panel.border = element_blank()\n    ) +\n    scale_x_date(expand=c(0,0), date_breaks = \"3 month\", date_labels = \"%b%y\") +\n  ggtitle('Average Retail Prices of Selected Consumer Items (Jan 2018 to Dec 2022)')"
-  },
-  {
     "objectID": "Take-home_Exercises/Take-Home_Ex01/Take-Home_Exercise01.html",
     "href": "Take-home_Exercises/Take-Home_Ex01/Take-Home_Exercise01.html",
     "title": "Creating Data Visualisation Beyond Default",
@@ -89,26 +47,5 @@
     "title": "Creating Data Visualisation Beyond Default",
     "section": "4.3 Exploring Performance Score by SE Index",
     "text": "4.3 Exploring Performance Score by SE Index\n\n4.3.1 SE Distribution by Scores\nSE Distribution Let’s first take a look into the socioeconomic (SE) distribution to gain some insights.\n\n\nCode\nstu_qqq_SG_selectedV &lt;- na.omit(stu_qqq_SG_selectedV)\nggplot(data = stu_qqq_SG_selectedV, aes(x = ESCS)) +\n  stat_halfeye(adjust = 0.5,\n               justification = -0.2,\n               .width = 0, point_colour = NA) +\n  geom_boxplot(width = 0.20,\n               outlier.shape = NA) +\n  labs(y = NULL,\n       title = \"SE Distribution\", subtitle = \"Left-Skewed SE Distribution\")  +\n  theme_tidybayes()\n\n\n\n\n\nESCS Index by Subject Performance\n\n\nCode\ncor1 &lt;- round(cor(stu_qqq_SG_selectedV$Maths, stu_qqq_SG_selectedV$ESCS),2)\ncor2 &lt;- round(cor(stu_qqq_SG_selectedV$Science, stu_qqq_SG_selectedV$ESCS),2)\ncor3 &lt;- round(cor(stu_qqq_SG_selectedV$Reading, stu_qqq_SG_selectedV$ESCS),2)\n\nse1 &lt;- ggplot(data = stu_qqq_SG_selectedV,\n             aes(y = Maths, x = ESCS)) +\n        geom_point(size = 0.1)+\n        geom_smooth(method = lm) + \n        annotate(\"text\", x = 2.5, y = 100, label=paste0(\"r = \", cor1), color = 'lightblue') +\n        theme_tidybayes()\n\nse2 &lt;- ggplot(data = stu_qqq_SG_selectedV,\n             aes(y = Science, x = ESCS)) +\n        geom_point(size = 0.1)+\n        geom_smooth(method = lm) +\n        annotate(\"text\", x = 2.5, y = 100, label=paste0(\"r = \", cor2), color = 'lightgreen') + \n        theme_tidybayes()\n\nse3 &lt;- ggplot(data = stu_qqq_SG_selectedV,\n             aes(y = Reading, x = ESCS)) +\n        geom_point(size = 0.1)+\n        geom_smooth(method = lm) + \n        annotate(\"text\", x = 2.5, y = 100, label=paste0(\"r = \", cor3), color = 'lightpink') +\n        theme_tidybayes()\n\nse1/se2/se3\n\n\n`geom_smooth()` using formula = 'y ~ x'\n`geom_smooth()` using formula = 'y ~ x'\n`geom_smooth()` using formula = 'y ~ x'\n\n\n\n\n\n\n\n4.3.2 Insights & Observations\n\nLeft Skewed Distribution from the SE Index can be deduced that students with normal to high ESCS Index are more prevalent as compared to the lower ESCS index. To bring the conversation further, we can study into the distribution of native, 1st Gen and 2nd Gen by the ESCS index in the future.\nDepicts a positive moderate correlation between Scores and ESCS index, hence we can infer that students with higher ESCS Index scores better in their subjects."
-  },
-  {
-    "objectID": "In-class_Ex/In-class_Ex03/In-class_Ex03.html",
-    "href": "In-class_Ex/In-class_Ex03/In-class_Ex03.html",
-    "title": "In-class Exercise 6 : Horizon Plot",
-    "section": "",
-    "text": "A horizon graph is an analytical graphical method specially designed for visualising large numbers of time-series. It aims to overcome the issue of visualising highly overlapping time-series as shown in the figure below."
-  },
-  {
-    "objectID": "In-class_Ex/In-class_Ex03/In-class_Ex03.html#import-data",
-    "href": "In-class_Ex/In-class_Ex03/In-class_Ex03.html#import-data",
-    "title": "In-class Exercise 6 : Horizon Plot",
-    "section": "20.2.1 Import Data",
-    "text": "20.2.1 Import Data\nFor the purpose of this hands-on exercise, Average Retail Prices Of Selected Consumer Items will be used.\nUse the code chunk below to import the AVERP.csv file into R environment.\n\naverp &lt;- read_csv(\"data/AVERP.csv\") %&gt;%\n  mutate(`Date` = dmy(`Date`))\n\n:::callout-Things to Learn By default, read_csv will import data in Date field as Character data type. dmy() of lubridate package to palse the Date field into appropriate Date data type in R. :::"
-  },
-  {
-    "objectID": "In-class_Ex/In-class_Ex03/In-class_Ex03.html#plotting-my-horizon-graph",
-    "href": "In-class_Ex/In-class_Ex03/In-class_Ex03.html#plotting-my-horizon-graph",
-    "title": "In-class Exercise 6 : Horizon Plot",
-    "section": "20.2.2 Plotting my Horizon Graph",
-    "text": "20.2.2 Plotting my Horizon Graph\nNext, the code chunk below will be used to plot the horizon graph.\n\naverp %&gt;% \n  filter(Date &gt;= \"2018-01-01\") %&gt;%\n  ggplot() +\n  geom_horizon(aes(x = Date, y=Values), \n               origin = \"midpoint\", \n               horizonscale = 6)+\n  facet_grid(`Consumer Items`~.) +\n    theme_few() +\n  scale_fill_hcl(palette = 'RdBu') +\n  theme(panel.spacing.y=unit(0, \"lines\"), strip.text.y = element_text(\n    size = 5, angle = 0, hjust = 0),\n    legend.position = 'none',\n    axis.text.y = element_blank(),\n    axis.text.x = element_text(size=7),\n    axis.title.y = element_blank(),\n    axis.title.x = element_blank(),\n    axis.ticks.y = element_blank(),\n    panel.border = element_blank()\n    ) +\n    scale_x_date(expand=c(0,0), date_breaks = \"3 month\", date_labels = \"%b%y\") +\n  ggtitle('Average Retail Prices of Selected Consumer Items (Jan 2018 to Dec 2022)')"
   }
 ]
