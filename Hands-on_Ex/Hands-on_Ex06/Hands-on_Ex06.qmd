@@ -143,15 +143,7 @@ theme(axis.ticks = element_blank(),
       legend.text = element_text(size = 6) )
 ```
 
-::: callout-Things to Learn
--   a tibble data table called grouped is derived by aggregating the attack by wkday and hour fields.
--   a new field called n is derived by using group_by() and count() functions.
--   `na.omit()` is used to exclude missing value.
--   `geom_tile()` is used to plot tiles (grids) at each x and y position. color and size arguments are used to specify the border color and line size of the tiles.
--   `theme_tufte()` of *ggthemes* package is used to remove unnecessary chart junk. To learn which visual components of default ggplot2 have been excluded, you are encouraged to comment out this line to examine the default plot.
--   `coord_equal()` is used to ensure the plot will have an aspect ratio of 1:1.
--   `scale_fill_gradient()` function is used to creates a two colour gradient (low-high).
-:::
+::: callout-Things to Learn - a tibble data table called grouped is derived by aggregating the attack by wkday and hour fields. - a new field called n is derived by using group_by() and count() functions. - `na.omit()` is used to exclude missing value. - `geom_tile()` is used to plot tiles (grids) at each x and y position. color and size arguments are used to specify the border color and line size of the tiles. - `theme_tufte()` of *ggthemes* package is used to remove unnecessary chart junk. To learn which visual components of default ggplot2 have been excluded, you are encouraged to comment out this line to examine the default plot. - `coord_equal()` is used to ensure the plot will have an aspect ratio of 1:1. - `scale_fill_gradient()` function is used to creates a two colour gradient (low-high). :::
 
 Then we can simply group the count by hour and wkday and plot it, since we know that we have values for every combination there’s no need to further preprocess the data.
 
@@ -159,15 +151,14 @@ Then we can simply group the count by hour and wkday and plot it, since we know 
 
 Challenge: Building multiple heatmaps for the top four countries with the highest number of attacks.
 
-
 Step 1: Deriving attack by country object
 
 In order to identify the top 4 countries with the highest number of attacks, you are required to do the followings:
 
-  - count the number of attacks by country,
-  - calculate the percent of attackes by country, and
-  - save the results in a tibble data frame.
-  
+-   count the number of attacks by country,
+-   calculate the percent of attackes by country, and
+-   save the results in a tibble data frame.
+
 ```{r}
 attacks_by_country <- count(
   attacks, source_country) %>%
@@ -215,7 +206,8 @@ ggplot(top4_attacks,
         legend.title = element_text(size = 8),
         legend.text = element_text(size = 6) )
 ```
-# 6.5 Plotting Cycle Plot 
+
+# 6.5 Plotting Cycle Plot
 
 In this section, you will learn how to plot a cycle plot showing the time-series patterns and trend of visitor arrivals from Vietnam programmatically by using ggplot2 functions.
 
@@ -265,7 +257,7 @@ ggplot() +
 
 # 6.6 Plotting Slpegraph
 
-Import the rice data set into R environment by using the code chunk belo and  plot a basic slopegraph as shown.
+Import the rice data set into R environment by using the code chunk belo and plot a basic slopegraph as shown.
 
 ```{r}
 rice <- read_csv("data/rice.csv")
@@ -278,11 +270,7 @@ rice %>%
                 SubTitle = "1961-1980",
                 Caption = "Prepared by: Firdaus")
 ```
+
 ::: Callout-Info
 For effective data visualisation design, factor() is used convert the value type of Year field from numeric to factor.
 :::
-
-
-
-
-
