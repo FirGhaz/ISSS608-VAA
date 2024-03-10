@@ -23,7 +23,7 @@ execute:
 pacman::p_load(ggrepel, patchwork, 
                ggthemes, hrbrthemes,
                ggdist, ggridges,
-               colorspace, gridExtra,
+               colorspace, gridExtra, treemap, treemapify,
                tidyverse, tmap, sf, tmaptools, dplyr, tibble, dplyr) 
 ```
 
@@ -54,7 +54,7 @@ wmpb_World_BMI <- wmpb_World %>% left_join(big_mac,
 library(dplyr)
 
 wmpb_World_BMI <- wmpb_World_BMI %>%
-  #filter(year == 2020) %>% 
+  filter(year == 2020) %>% 
   group_by(name) %>%
   filter(
     any(!is.na(currency_code)) & 
@@ -126,13 +126,6 @@ tm_shape(wmpb_World_BMI) +
  tm_layout(legend.position = c("bottom", "bottom"))
 ```
 
-```{r}
-tm_shape(wmpb_World_BMI) +
-tm_bubbles(col = "purple",scale = 2,
-           size = "bmi_usd_price",
-           border.col = "black",
-           border.lwd = 3, alpha = 0.5)
-```
 
 ```{r}
 var <- wmpb_World_BMI$bmi_usd_price
@@ -181,13 +174,6 @@ percentmap("bmi_usd_price", wmpb_World_BMI, legtitle = "Percentile", mtitle = "B
 
 ```
 
-```{r}
-ggplot(data = wmpb_World_BMI,
-       aes(x = "",
-           y = bmi_usd_price)) +
-  geom_boxplot()
-  geom_dotplot()
-```
 
 ```{r}
 boxbreaks <- function(v,mult=1.5) {
@@ -274,6 +260,37 @@ boxmap("bmi_usd_price", wmpb_World_BMI)+
             free.coords=TRUE, 
             drop.shapes=FALSE) 
 ```
+
+
+```{r}
+# First, ensure that "Seven seas (open ocean)" rows are removed.
+wmpb_World_BMI <- wmpb_World_BMI[wmpb_World_BMI$continent != "Seven seas (open ocean)", ]
+
+library(dplyr)
+
+# Extract non-spatial data
+non_spatial_data <- as.data.frame(wmpb_World_BMI)
+
+# Perform your filtering and factor level dropping
+cleaned_data <- non_spatial_data %>%
+  filter(continent != "Seven seas (open ocean)") %>%
+  droplevels()
+
+library(treemap)
+
+treemap(cleaned_data,
+        index = c("continent", "name"),
+        vSize = "gdp_per_employed",
+        vColor = "bmi_usd_price",
+        type = "manual",
+        palette="Blues",
+        title = "BMI (USD) by Continent and GDP_per_employed, 2020",
+        title.legend = "Big Mac Index ($USD)"
+)
+
+```
+
+
 
 # 3 Time-Series using ARIMA (AutoRegressive Integrated Moving Average)
 
@@ -590,3 +607,24 @@ If there is significant autocorrelations, there is a need to revise the model by
 ::: callout-info
 For the purpose of Shiny App, all Countries will run ARIMA with the option for the viewer to select the (1) model fit criteria, (2) parameters and (3) residual checks to see if the model suffers from overfitting or autocorellation.
 :::
+
+```{r}
+#| warning: false 
+#| code-fold: show
+#| eval: false
+bp <- globalPop %>%
+  plot_ly(x = ~Old, 
+          y = ~Young, 
+          size = ~Population, 
+          color = ~Continent,
+          sizes = c(2, 100),
+          frame = ~Year, 
+          text = ~Country, 
+          hoverinfo = "text",
+          type = 'scatter',
+          mode = 'markers'
+          ) %>%
+  layout(showlegend = FALSE)
+bp
+```
+
