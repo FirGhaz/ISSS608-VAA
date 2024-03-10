@@ -283,7 +283,7 @@ head(temp_table_2)
 
 ```{r}
 #| warning = FALSE
-
+#| echo: false
 p <- ggplot(temp_table_2, aes(x = Year, y = `Mean Temperature (°C)`, fill = Year)) +
   stat_halfeye(
     adjust = 0.4, 
