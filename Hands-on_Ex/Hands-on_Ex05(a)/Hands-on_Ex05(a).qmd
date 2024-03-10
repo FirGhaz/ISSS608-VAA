@@ -81,16 +81,16 @@ Use `ggtern()` function of `ggtern` package to create a simple ternary plot.
 
 ```{r}
 #Building the static ternary plot
-ggtern(data=agpop_mutated,aes(x=YOUNG,y=ACTIVE, z=OLD)) +
-  geom_point()
+#ggtern(data=agpop_mutated,aes(x=YOUNG,y=ACTIVE, z=OLD)) +
+  #geom_point()
 ```
 
 ```{r}
 #Building the static ternary plot
-ggtern(data=agpop_mutated, aes(x=YOUNG,y=ACTIVE, z=OLD)) +
-  geom_point() +
-  labs(title="Population structure, 2015") +
-  theme_rgbw()
+#ggtern(data=agpop_mutated, aes(x=YOUNG,y=ACTIVE, z=OLD)) +
+  #geom_point() +
+  #labs(title="Population structure, 2015") +
+  #theme_rgbw()
 ```
 
 ## 5.4.2 Plotting an interactive ternary diagram
