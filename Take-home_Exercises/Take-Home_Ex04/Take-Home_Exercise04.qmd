@@ -361,8 +361,8 @@ ggplot() +
 ```
 ```{r}
 # Determine the range for the sizes in the plot
-min_size <- 5
-max_size <- 20
+min_size <- 3
+max_size <- 25
 
 size_range <- range(network_nodes_geo_exports$Size, na.rm = TRUE)
 
@@ -376,11 +376,11 @@ scaled_size <- (network_nodes_geo_exports$Size - size_range[1]) * scaling_factor
 ```{r}
 library(plotly)
 
-edges_geo$hover_text <- paste(
-  "Country: ", edges_geo$name,
-  "<br>Import: ", edges_geo$export_usd,  # Replace with your actual import column name
-  "<br>Export: ", edges_geo$import_usd,  # Replace with your actual export column name
-  "<br>BMI USD Price: ", edges_geo$bmi_usd_price,
+network_nodes_geo_exports$hover_text <- paste(
+  "Country: ", network_nodes_geo_exports$name,
+  "<br>Import: ", #edges_geo$export_usd,  # Replace with your actual import column name
+  "<br>Export: ", #edges_geo$import_usd,  # Replace with your actual export column name
+  "<br>BMI USD Price: ", #edges_geo$bmi_usd_price,
   sep = ""
 )
 
@@ -394,8 +394,8 @@ p <- plot_geo(worldnew, locationmode = 'ISO-3') %>%
     mode = 'markers',
     marker = list(
       size = scaled_size,  # Make sure this is defined as shown in previous examples
-      color = 'red',
-      opacity = 0.5
+      color = 'yellow',
+      opacity = 0.3
     )
   )
 
@@ -431,6 +431,10 @@ p <- p %>%
 # Display the plot
 p
 ```
+
+
+
+
 
 
 ```{r}
