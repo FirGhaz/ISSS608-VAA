@@ -1,5 +1,5 @@
 ---
-title: "Big Mac Index Choropleth and Time Series"
+title: "Big Mac Index Choropleth and Predictive Model"
 subtitle: "Take Home Exercise 04"
 author: "FirGhaz"
 date: 02/03/2024
@@ -18,6 +18,420 @@ execute:
 ---
 
 # 1 Load Packages and Data
+
+
+```{r}
+if (!require("tidyverse")) install.packages("tidyverse", dependencies = TRUE)
+if (!require("sf")) install.packages("sf", dependencies = TRUE)
+if (!require("rnaturalearth")) install.packages("rnaturalearth", dependencies = TRUE)
+if (!require("countrycode")) install.packages("countrycode", dependencies = TRUE)
+if (!require("ggrepel")) install.packages("ggrepel", dependencies = TRUE)
+```
+```{r}
+library("tidyverse")
+library("sf")
+library("rnaturalearth")
+library("countrycode")
+library("ggrepel")
+library(plotly)
+```
+
+Get World data
+```{r}
+worldnew <- ne_countries(scale="small", returnclass = "sf")
+```
+
+```{r}
+worldnew %>%
+  ggplot() + 
+  geom_sf()
+```
+  
+Change map projection and coordinate reference system
+
+```{r}
+worldnew %>%
+  #can use moll, aeqd, goode, robin 
+  #projection website: https://proj.org/operations/projections/
+  st_transform(crs = "+proj=robin") %>% 
+  ggplot() +
+  geom_sf() +
+  #coord_sf(datum = NA) +
+  theme_minimal()
+```
+Read the dataset
+```{r}
+bmi_data_raw <- read_csv("data/bmi_data.csv")
+```
+adding in ISO3 Country Code
+```{r}
+bmi_data_iso <- bmi_data_raw%>%
+  mutate (Iso3 = countrycode :: countrycode(
+    sourcevar = country,
+    origin = "country.name",
+    destination = "iso3c")
+  )
+```
+
+
+Join datasets
+
+```{r}
+world_bmi <- worldnew %>%
+  dplyr::select (geometry, name, iso_a3) %>%
+  left_join(bmi_data_iso, by = c("iso_a3" = "Iso3")) # %>%
+  #filter(year == 2020)
+
+world_bmi
+```
+
+```{r}
+library(ggplot2)
+library(sf)
+library(dplyr)
+
+world_bmi2 <- worldnew %>% 
+  filter(admin != "Antarctica") %>%
+  st_transform(crs ="+proj=robin") %>%
+  ggplot() +
+  geom_sf(color = "grey") +  # Fixed by adding a '+' at the end of this line
+  geom_sf(data = world_bmi, aes(fill = bmi_usd_price)) +  # Removed quotes around bmi_usd_price
+  scale_fill_viridis_c() +  # Changed to a continuous color scale
+  theme_minimal() +
+  theme(plot.title = element_text(face = "bold"),
+        axis.text.x = element_blank(),
+        legend.position = "bottom") +  # Changed legend position to bottom
+  labs(title = "BMI Price (USD)",
+       subtitle = "Countries BMI Index at 2020",
+       x = NULL, y = NULL, caption = "Made by Firdaus")
+
+print(world_bmi2)
+```
+
+by plotly
+```{r}
+fontStyle = list(
+  family = "DM Sans",
+  size = 15,
+  color = "black"
+)
+
+label = list(
+  bgcolor = "#EEEEEE",
+  bordercolor = "transparent",
+  font = fontStyle
+)
+```
+
+```{r}
+bmi_geo <- plot_ly(data = world_bmi, 
+                   locationmode= 'ISO-3', 
+                   frame = ~year) %>%
+  add_trace(locations = ~iso_a3,
+            z = ~bmi_usd_price,
+            zmin = 0,
+            zmax = 8,
+            type = 'choropleth',
+            text = ~name,
+            #("Country: ", name, "<br>"
+                                 #"BMI USD Price: $", sprintf("%.2f", bmi_usd_price), "<br>",
+                                 #"GDP per Capita: $", sprintf("%.2f", gdp_per_capita), "<br>",
+                                 #"Inflation: ", sprintf("%.2f%%", inflation)), 
+            colorscale = "Electric", 
+            color = ~bmi_usd_price) %>%
+  layout(geo = list(projection = list(type = 'natural earth'),
+          font = list(family = "DM Sans"),
+          title = 'Global Big Mac Index (USD Price) from 2002 to 2021')) %>%
+  style(hoverlabel = label) %>%
+  config (displayModeBar = FALSE) %>%
+  colorbar(tickprefix = "$")
+
+bmi_geo
+
+
+```
+
+
+#1.5 Network Choropleth
+
+```{r}
+#install.packages(c("igraph", "ggplot2", "ggraph"))
+library(igraph)
+library(ggplot2)
+library(ggraph)
+
+# Load the datasets
+import_export_beef <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/import_export_beef_v2.csv')
+bmi_data <- read.csv('data/bmi_data.csv')
+
+# Preview the datasets
+head(import_export_beef)
+head(bmi_data)
+
+```
+
+```{r}
+library(dplyr)
+library(igraph)
+
+# Assuming 'country_name' is the common key and 'ISO3' is the column you want to join from 'world_bmi' to 'import_export_beef'
+import_export_beef_enriched <- import_export_beef %>%
+  left_join(world_bmi, by = "country") %>%
+  select(-matches("^world_bmi"))  # Remove duplicated columns if needed
+
+#import_export_beef_enriched <- import_export_beef_enriched %>%
+  #rename(ISO3 = iso_a3)
+
+
+# Filter the dataset for a specific year
+year_specific_data <- import_export_beef_enriched %>%
+ filter(Year == 2002) #!is.na(country)) #!is.na(Partner))  # Adjust the year as needed
+
+# Create an igraph object from the filtered data
+trade_network <- graph_from_data_frame(d = year_specific_data, directed = TRUE)
+
+```
+
+```{r}
+# Basic network plot with ggraph
+library(ggraph)
+
+# Visualize the network
+ggraph(trade_network, layout = "mds") + 
+  geom_edge_link(aes(color = Element, edge_WIDTH = Value), alpha = 0.3) + # Use 'element' for color
+  scale_edge_color_manual(values = c("Import Quantity" = "lightblue", "Export Quantity" = "pink")) + # Customize colors
+  geom_node_point(color = "orange", size = 1.5) +
+  geom_node_text(aes(label = name), repel = TRUE, size = 2, color = "darkgreen") + # Optional labels
+  theme_minimal() +
+  ggtitle("Beef Imports | Exports Network 2020")
+
+
+```
+
+```{r}
+library(sf)
+
+world_borders <- st_read("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/geospatial/TM_WORLD_BORDERS-0.3.shp")
+```
+
+```{r}
+library(sf)
+
+# Assuming 'world_borders' is already loaded with st_read()
+
+# Correct geometry issues
+world_borders_valid <- st_make_valid(world_borders)
+
+# Calculate centroids for corrected geometries
+world_centroids <- st_centroid(world_borders_valid)
+
+# Extract latitude and longitude
+world_centroids <- world_centroids %>% 
+  mutate(longitude = st_coordinates(.)[, 1],
+         latitude = st_coordinates(.)[, 2])
+```
+
+```{r}
+# Select necessary columns (assuming ISO3 is used as the identifier)
+geo_data <- world_centroids %>% 
+  select(ISO3, latitude, longitude)
+
+
+```
+
+
+
+
+```{r}
+library(dplyr)
+
+# Loop through each node by index
+for(i in seq_along(V(trade_network)$name)) {
+  # Find the corresponding ISO3 code for each node based on 'country'
+  node_name <- V(trade_network)$name[i]
+  iso_code <- import_export_beef_enriched %>%
+    filter(country == node_name) %>%
+    pull(ISO3) %>%
+    unique()  # Ensuring unique ISO3 code is selected in case of multiple matches
+  
+  #Check if ISO3 code is found and assign it
+  if(length(iso_code) == 1) {
+   V(trade_network)$ISO3[i] <- iso_code
+  } else {
+   V(trade_network)$ISO3[i] <- NA  # Assign NA if no matching ISO3 code is found
+  }
+}
+
+```
+
+
+```{r}
+# Assuming your igraph object 'trade_network' has node names that match country codes
+network_nodes <- data.frame(
+  name = V(trade_network)$name,
+  ISO3 = V(trade_network)$ISO3)
+```
+
+
+
+
+
+```{r}
+# Merge latitude and longitude with network nodes
+network_nodes_geo <- merge(network_nodes, geo_data, by = "ISO3")
+
+```
+
+```{r}
+# Assuming 'network_nodes_geo' contains 'ISO3', 'latitude', and 'longitude'
+# and 'edges_df' has 'from' and 'to' as ISO3 codes
+edges_df <- get.data.frame(trade_network, what = "edges")
+# Ensure ISO3 codes are used in edges_df (if necessary, adjust this step based on your data)
+edges_df$from <- V(trade_network)$ISO3[match(edges_df$from, V(trade_network)$name)]
+edges_df$to <- V(trade_network)$ISO3[match(edges_df$to, V(trade_network)$name)]
+
+# Merge geographic coordinates for both 'from' and 'to'
+edges_geo <- edges_df %>%
+  left_join(network_nodes_geo, by = c("from" = "ISO3")) %>%
+  rename(from_lat = latitude, from_long = longitude) %>%
+  left_join(network_nodes_geo, by = c("to" = "ISO3")) %>%
+  rename(to_lat = latitude, to_long = longitude)
+
+head(edges_geo)
+```
+
+
+
+
+```{r}
+library(ggplot2)
+
+edges_geo <- edges_geo %>%
+  mutate(alpha = ifelse(Element == "Export Quantity", 0.5, 0.5)) 
+
+ggplot() + 
+  geom_sf(data = worldnew , fill = "#1A1A59", color = "#8080B3", line = "#8080B3") + 
+  geom_segment(data = edges_geo, aes(x = from_long, y = from_lat, xend = to_long, yend = to_lat, color = Element), size = 0.001, alpha = 0.5) + 
+  scale_color_manual(values = c("Import Quantity" = "#53C9CF", "Export Quantity" = "#F3B7F0")) +
+  geom_point(data = network_nodes_geo, aes(x = longitude, y = latitude), color = "red", size = 1) +
+  theme_dark()
+```
+
+```{r}
+# Assuming 'edges_geo' has 'from', 'to', 'Element', and 'Value' columns where 'Value' is the trade volume
+exports <- edges_geo %>% 
+  filter(Element == "Export Quantity") %>%
+  group_by(from) %>%
+  summarise(Total_Export = sum(Value))
+
+imports <- edges_geo %>%
+  filter(Element == "Import Quantity") %>%
+  group_by(to) %>%
+  summarise(Total_Import = sum(Value))
+
+# Merge exports and imports and calculate net export
+net_exports <- merge(exports, imports, by.x = "from", by.y = "to", all = TRUE) %>%
+  mutate(Total_Export = ifelse(is.na(Total_Export), 0, Total_Export),
+         Total_Import = ifelse(is.na(Total_Import), 0, Total_Import),
+         Net_Export = Total_Export - Total_Import) %>%
+  select(from, Net_Export)
+
+# Rename 'from' to 'ISO3' for joining
+colnames(net_exports)[1] <- "ISO3"
+
+```
+
+```{r}
+network_nodes_geo_exports <- network_nodes_geo %>%
+  left_join(net_exports, by = "ISO3") %>%
+  mutate(Size = ifelse(is.na(Net_Export), 2, sqrt(abs(Net_Export))))  # Adjust the size calculation as needed
+
+```
+
+```{r}
+ggplot() + 
+  geom_sf(data = worldnew , fill = "#140A29", color = "#8080B3", line = "#8080B3") + 
+  geom_point(data = network_nodes_geo_exports, aes(x = longitude, y = latitude, size = Size), color = "red", alpha = 0.5) +
+  geom_segment(data = edges_geo, aes(x = from_long, y = from_lat, xend = to_long, yend = to_lat, color = Element), 
+               size = 0.5, alpha = 0.008) + 
+  scale_color_manual(values = c("Import Quantity" = "#53C9CF", "Export Quantity" = "#FFB054")) +
+  theme_dark() +
+  guides(size = FALSE, color = guide_legend(override.aes = list(size = 2, alpha = 2))) +  
+  labs(color = "Exports | Imports (Beef) ") 
+```
+```{r}
+# Determine the range for the sizes in the plot
+min_size <- 5
+max_size <- 20
+
+size_range <- range(network_nodes_geo_exports$Size, na.rm = TRUE)
+
+scaling_factor <- (max_size - min_size) / (size_range[2] - size_range[1])
+
+scaled_size <- (network_nodes_geo_exports$Size - size_range[1]) * scaling_factor + min_size
+
+```
+
+
+```{r}
+library(plotly)
+
+edges_geo$hover_text <- paste(
+  "Country: ", edges_geo$name,
+  "<br>Import: ", edges_geo$export_usd,  # Replace with your actual import column name
+  "<br>Export: ", edges_geo$import_usd,  # Replace with your actual export column name
+  "<br>BMI USD Price: ", edges_geo$bmi_usd_price,
+  sep = ""
+)
+
+# Create the base map with interactive nodes
+p <- plot_geo(worldnew, locationmode = 'ISO-3') %>%
+  add_trace(
+    type = 'scattergeo',
+    locations = network_nodes_geo_exports$ISO3,
+    text = network_nodes_geo_exports$hover_text,  # Use the hover text for nodes
+    hoverinfo = 'text',
+    mode = 'markers',
+    marker = list(
+      size = scaled_size,  # Make sure this is defined as shown in previous examples
+      color = 'red',
+      opacity = 0.5
+    )
+  )
+
+# Overlay the trade lines (make them static)
+p <- p %>%
+  add_segments(
+    x = ~edges_geo$from_long,
+    y = ~edges_geo$from_lat,
+    xend = ~edges_geo$to_long,
+    yend = ~edges_geo$to_lat,
+    hoverinfo = 'none',
+    line = list(
+      color = ~ifelse(edges_geo$Element == "Export Quantity", "#FFA054", "#33C9CF"),
+      width = 0.007,
+      alpha = 0.2
+    )
+  )
+
+# Customize the layout
+p <- p %>%
+  layout(
+    title = 'World Trade Network (Interactive Nodes)',
+    geo = list(
+      showland = TRUE,
+      landcolor = toRGB("#140A29"),
+      countrycolor = toRGB("#8080B3"),
+      coastlinecolor = toRGB("#8080B3"),
+      projection = list(type = 'natural earth')
+    ),
+    legend = list(orientation = 'h')
+  )
+
+# Display the plot
+p
+```
+
 
 ```{r}
 pacman::p_load(ggrepel, patchwork, 
@@ -40,8 +454,10 @@ data("World")
 ```
 
 ```{r}
+library(dplyr)
+
 wmpb_World <- World %>% 
-  select(-HPI, -inequality, -footprint, -life_exp, -well_being, -gdp_cap_est)
+  dplyr::select(-HPI, -inequality, -footprint, -life_exp, -well_being, -gdp_cap_est)
 wmpb_World
 ```
 
@@ -284,6 +700,26 @@ treemap(cleaned_data,
         title = "BMI (USD) by Continent and GDP_per_employed, 2020",
         title.legend = "Big Mac Index ($USD)"
 )
+
+```
+
+bivariate analysis
+```{r}
+#install.packages("ggplot2")
+#install.packages("ggExtra")
+library(ggplot2)
+library(ggExtra)
+```
+
+```{r}
+ggplot(world_bmi, aes(x = inflation, y = bmi_usd_price)) +
+  geom_bin2d(bins = 50) +  # Adjust 'bins' to change the resolution of the heatmap
+  scale_fill_viridis_c() +  # Use a perceptually uniform color scale
+  labs(title = "Bivariate Heatmap of BMI USD Price and Inflation",
+       x = "Inflation ($)",
+       y = "BMI ($USD)",
+       fill = "Count") +
+  theme_minimal()
 
 ```
 
