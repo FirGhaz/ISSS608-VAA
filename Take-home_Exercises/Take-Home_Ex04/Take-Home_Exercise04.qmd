@@ -11,17 +11,15 @@ execute:
   warning: false
   format:
   html:
-    code-fold: true
-    code-summary: "code block"
-    code-tools: false
-    code-copy: true
+  code-fold: true
+  code-tools: false
 ---
 
 This exercise aims to develop a Shiny application featuring an interactive choropleth map to analyze global trade networks in conjunction with the Big Mac Index. By integrating geographical data with economic indicators, the application will enable a visual exploration of how trade volumes and net exports correlate with price parity across different regions. The choropleth will serve as a dynamic tool to observe patterns, offering users the ability to drill down into country-specific trade connections and Index values.
 
 The final deliverable will be a user-centric Shiny application, optimized for engagement and insight discovery. It will be complemented by a concise report summarizing the analytical narratives that emerge from the visualization. This endeavor will not only underscore the practicality of geospatial data in economic analysis but also aims to enrich the discourse on the implications of trade dynamics for market pricing mechanisms like the Big Mac Index.
 
-# 1 LOADING PACKAGES
+# 1 Loading Packages
 
 ```{r}
 if (!require("tidyverse")) install.packages("tidyverse", dependencies = TRUE)
@@ -39,8 +37,7 @@ library("countrycode")
 library("ggrepel")
 library(plotly)
 ```
-
-# 2 CHOROPLETH
+# 2 Choropleth
 
 The focus of this segment is purely for Exploratory analysis. The statistical and clustering will be conducted in Segment 4 under network analysis for trade
 
@@ -61,16 +58,15 @@ worldnew %>%
   theme_minimal()
 ```
 
-Read the dataset
-
 ```{r}
 bmi_data_raw <- read_csv("data/bmi_data.csv")
 ```
 
-adding in ISO3 Country Code
+
+In this initial phase of the project, we are focusing on integrating ISO3 country codes into our dataset. These three-letter codes are an international standard for referencing countries, which will allow us to accurately link our trade data with the corresponding geographic entities. 
 
 ```{r}
-bmi_data_iso <- bmi_data_raw%>%
+bmi_data_iso <- bmi_data_raw %>%
   mutate (Iso3 = countrycode :: countrycode(
     sourcevar = country,
     origin = "country.name",
@@ -78,7 +74,6 @@ bmi_data_iso <- bmi_data_raw%>%
   )
 ```
 
-Join datasets
 
 ```{r}
 world_bmi <- worldnew %>%
@@ -89,7 +84,7 @@ world_bmi <- worldnew %>%
 world_bmi
 ```
 
-Univariate Analysis on Choropleth
+## 2.1 Univariate Analysis on Choropleth (BMI (USD))
 
 ```{r}
 library(ggplot2)
@@ -113,8 +108,7 @@ world_bmi2 <- worldnew %>%
 
 print(world_bmi2)
 ```
-
-Visualising with Time by Plotly
+To have a sense of the BMI index over the selected countries over the years from 2002 to 2021. A plotly graph was plotted.
 
 ```{r}
 fontStyle = list(
@@ -171,7 +165,7 @@ wmpb_World
 ```
 
 ```{r}
-wmpb_World_BMI <- wmpb_World %>% left_join(big_mac,
+wmpb_World_BMI <- wmpb_World %>% left_join(bmi_data_raw,
                           by = c("name" = "country"))
 ```
 
@@ -181,40 +175,46 @@ library(dplyr)
 wmpb_World_BMI_2020 <- wmpb_World_BMI %>%
   filter(year == 2020) %>% 
   group_by(name) %>%
-  filter(
-    any(!is.na(currency_code)) & 
-    any(!is.na(bmi_localprice)) & 
-    any(!is.na(bmi_usd_price)) & 
-    any(!is.na(export_usd)) & 
-    any(!is.na(import_usd)) & 
-    any(!is.na(GDP)) & 
-    any(!is.na(gdp_per_capita)) & 
-    any(!is.na(gdp_per_employed)) & 
-    any(!is.na(inflation)) & 
-    any(!is.na(year))
-  ) %>%
+  #filter(
+    #any(!is.na(currency_code)) & 
+    #any(!is.na(bmi_localprice)) & 
+    #any(!is.na(bmi_usd_price)) & 
+    #any(!is.na(export_usd)) & 
+    #any(!is.na(import_usd)) & 
+    #any(!is.na(GDP)) & 
+    #any(!is.na(gdp_per_capita)) & 
+   # any(!is.na(inflation)) & 
+    #any(!is.na(year))
+  #) %>%
   ungroup()
 
 ```
 
 ```{r}
+library(tmap)
+
+world_bmi_2020 <- wmpb_World_BMI_2020 %>%
+  dplyr::select (geometry, name, iso_a3) %>%
+  left_join(bmi_data_iso, by = c("iso_a3" = "Iso3"))  %>%
+  filter(year == 2020) 
+  
+world_bmi_2020 <- world_bmi_2020 %>%
+  mutate(geometry = st_make_valid(geometry))
+
+# Ensure tmap is in view mode for interactive visualization
 tmap_mode("view")
 
-tm <- tm_shape(wmpb_World_BMI_2020) +
-  tm_polygons("bmi_usd_price", id = "name", popup.vars = c("Big Mac Index(USD)" = "bmi_usd_price", 
+tm <- tm_shape(world_bmi_2020) +
+  tm_polygons("bmi_usd_price", id = "country", popup.vars = c("Big Mac Index(USD)" = "bmi_usd_price", 
                                                        "Inflation" = "inflation", 
-                                                       "Population Density" = "pop_est_dens", 
-                                                       "GDP per Employed" = "gdp_per_employed",
-                                                       "BMI local Price" = "bmi_localprice",
-                                                       "Econonic Status" = "economy",
-                                                       "Income" = "income_grp"),
-            popup.format = list(pop_est_dens = list(digits = 1), gdp_per_employed = list(digits = 0), inflation = list(digits = 1)
+                                                       "GDP per Capita" = "gdp_per_capita",
+                                                       "Export" = "export_usd",
+                                                       "Import" = "import_usd"),
+            popup.format = list(export_usd= list(digits = 1),import_usd= list(digits = 1), gdp_per_capita = list(digits = 0), inflation = list(digits = 1)
   )) +
   tm_layout()
 
 tm
-#qtm(wmpb_World_BMI_2020, 
-   #fill = "usd_price")
 ```
 
 ```{r}
@@ -232,9 +232,18 @@ tm_shape(wmpb_World_BMI_2020) +
   tm_borders(alpha = 0.5)
 ```
 
-By percentile
+### 2.1.1 Geo Percentile of BMI 
 
 ```{r}
+library(sf)
+
+invalid_geometries <- !st_is_valid(wmpb_World_BMI_2020)
+
+sum(invalid_geometries)
+
+wmpb_World_BMI_2020[invalid_geometries, ] <- st_make_valid(wmpb_World_BMI_2020[invalid_geometries, ])
+
+all(st_is_valid(wmpb_World_BMI_2020))
 var <- wmpb_World_BMI_2020$bmi_usd_price
   
 percent <- c(0,.01,.1,.5,.9,.99,1)
@@ -253,7 +262,7 @@ get.var <- function(var_name, wmpb_World_BMI_2020) {
 
 ```{r}
 library(tmap)
-tmap_mode("plot")
+tmap_mode("view")
 tmap_options(legend.width = 0.25) # Adjusts the width of the legend area
 
 # Define the function
@@ -268,7 +277,7 @@ percentmap <- function(var_name, wmpb_World_BMI_2020, legtitle=NA, mtitle="Perce
             breaks = bperc,
             palette = "Greens",
             legend.hist = TRUE) +
-    tm_borders() +
+    tm_borders(col = "black") +
     tm_layout(main.title = mtitle, 
               main.title.position = "center",
               legend.position = c("left", "bottom")) -> tm
@@ -276,11 +285,21 @@ percentmap <- function(var_name, wmpb_World_BMI_2020, legtitle=NA, mtitle="Perce
   print(tm)
 }
 
-percentmap("bmi_usd_price", wmpb_World_BMI_2020, legtitle = "Percentile", mtitle = "BMI USD Percentile Map")
+percentmap("bmi_usd_price", wmpb_World_BMI_2020, legtitle = "Percentile", mtitle = "BMI USD($) Percentile Map")
 
 ```
 
-Boxbreak
+
+### 2.1.2 Building a Boxmap
+
+*Distribution Overview:*
+The boxbreaks function calculates the interquartile range (IQR) of the bmi_usd_price variable to determine the "fences" or thresholds for outliers. It then establishes break points for categorizing regions: lower outliers, the first quartile (25%), the median (50%), the third quartile (75%), and upper outliers. This approach provides a quick way to identify where the majority of the data points lie in relation to the overall distribution and to spot regions with exceptionally high or low BMI prices.
+
+*Geographic Variations:*
+By applying the boxmap function, we visually analyze the geographic distribution of Big Mac prices across different countries. This analysis can reveal patterns or clusters of higher or lower prices. For instance, higher prices in developed countries could reflect stronger currencies or higher living costs, while lower prices in developing countries might be attributed to lower production costs or weaker currencies.
+
+*Outliers and Economic Insights:*
+Outliers identified through this method can offer insights into anomalies within the data. Lower outliers might indicate countries where Big Macs are unusually cheap, potentially due to lower labor and production costs or subsidy effects. Conversely, upper outliers might point to countries where Big Macs are disproportionately expensive, which could be due to import tariffs, high taxes, or significant demand relative to supply. Identifying these outliers can prompt further investigation into the economic policies, supply chain logistics, and market dynamics of these regions.
 
 ```{r}
 boxbreaks <- function(v,mult=1.5) {
@@ -321,9 +340,8 @@ get.var <- function(vname,df) {
 
 ```{r}
 get.var <- function(vname, df) {
-  # This assumes 'vname' is the name of the variable to extract,
-  # and 'df' is the data frame or sf object without geometry.
-  v <- df[[vname]] %>% as.numeric()  # Extract as vector and ensure it's numeric
+
+  v <- df[[vname]] %>% as.numeric() 
   return(v)
 }
 library(sf)  # Assuming you're working with sf objects
@@ -363,16 +381,55 @@ boxmap <- function(vnam, df,
 ```{r}
 tmap_mode("view")
 boxmap("bmi_usd_price", wmpb_World_BMI_2020)+
-  tm_facets(by="continent", 
+  tm_facets(by="continent.x", 
             free.coords=TRUE, 
             drop.shapes=FALSE) 
 ```
 
-Treemap
+*Comparison by Continent:*
+The use of tm_facets to segment the map by continent allows for an examination of regional trends and comparisons. It can uncover how economic, cultural, and regional trade agreements influence the price of consumer goods like Big Macs. For example: 
+  - North America although USA and Canada are top 50 percentile, Mexico is lagging behind the big mac's indicator.
+  - Most of the EU countries are also in the 50 - 75% and above as compare to majority of Asia which still sits at <25% percentile especially in the South East Asia Region.
+  
+*Statistical Significance:*
+While this visual method offers valuable insights, it's also crucial to conduct further statistical tests to determine the significance of the observed patterns. For instance, analyses such as ANOVA or post-hoc tests can quantify whether the differences in Big Mac prices between continents or between outlier and non-outlier countries are statistically significant.
+
+
+## 2.2 Treemap Multi Variate Analysis
+The treemap provides a hierarchical view of data and is particularly effective for showcasing proportional relationships using nested rectangles.
 
 ```{r}
 # First, ensure that "Seven seas (open ocean)" rows are removed.
-wmpb_World_BMI_2020 <- wmpb_World_BMI_2020[wmpb_World_BMI_2020$continent != "Seven seas (open ocean)", ]
+wmpb_World_BMI_2020 <- wmpb_World_BMI_2020[wmpb_World_BMI_2020$continent.x != "Seven seas (open ocean)", ]
+library(viridis)
+library(dplyr)
+
+# Extract non-spatial data
+non_spatial_data <- as.data.frame(wmpb_World_BMI_2020)
+
+# Perform your filtering and factor level dropping
+cleaned_data <- non_spatial_data %>%
+  filter(continent.x != "Seven seas (open ocean)") %>%
+  droplevels()
+
+library(treemap)
+
+treemap(cleaned_data,
+        index = c("continent.x", "name"),
+        vSize = "bmi_usd_price",
+        vColor = "gdp_per_capita",
+        type = "manual",
+        palette="Blues",
+        title = "BMI (USD) by Continent and GDP per Capita, 2020",
+        title.legend = "Big Mac Index ($USD)"
+)
+
+```
+This treemap is a visual between countries' GDP per capita and Big Mac Index (BMI) prices in USD for 2020, highlighting economic disparities across continents. In Europe, the dark shades of affluent countries like Switzerland juxtapose with the lighter hues of Eastern nations, indicating a higher BMI aligned with greater wealth. Asia's patchwork reflects stark differences in economic development, while North America's uniform darkness suggests higher living costs in line with its economic status. Oceania and South America reveal variations in the cost of living, as seen through the diverse shades representing the BMI, suggesting distinct economic structures and market dynamics within these regions. This treemap serves as a succinct graphical summary of the intersection between a country's economic health and the relative cost of a globally recognized product.
+
+
+```{r}
+wmpb_World_BMI_2020 <- wmpb_World_BMI_2020[wmpb_World_BMI_2020$continent.x != "Seven seas (open ocean)", ]
 
 library(dplyr)
 
@@ -381,39 +438,84 @@ non_spatial_data <- as.data.frame(wmpb_World_BMI_2020)
 
 # Perform your filtering and factor level dropping
 cleaned_data <- non_spatial_data %>%
-  filter(continent != "Seven seas (open ocean)") %>%
+  filter(continent.x != "Seven seas (open ocean)") %>%
   droplevels()
 
 library(treemap)
+library(gridExtra)
 
-treemap(cleaned_data,
-        index = c("continent", "name"),
-        vSize = "gdp_per_employed",
-        vColor = "bmi_usd_price",
-        type = "manual",
-        palette="Blues",
-        title = "BMI (USD) by Continent and GDP_per_employed, 2020",
-        title.legend = "Big Mac Index ($USD)"
+# Generate the treemap plots
+p1 <- treemap(cleaned_data,
+        index = c("continent.x", "name"),
+        vSize = "export_usd",
+        vColor = "gdp_per_capita",
+        type = "value",
+        title = "Exports by Continent and GDP per Capita, 2020",
+        title.legend = "GDP per Capita"
 )
-
+p1
 ```
-
-bivariate analysis
+The treemap above provides a hierarchical view of data and is particularly effective for showcasing proportional relationships using nested rectangles. We can observe that Asian economies such as China and Japan occupy large areas, indicating a high GDP per capita combined with significant exports. Contrastingly, the smaller rectangles representing countries like the Philippines and Malaysia suggest lower GDP per capita figures. Additionally, the treemap highlights the prominence of North America, particularly the United States, which dominates the visual space reflecting its substantial GDP per capita and export volume. Europe's diverse economic status is represented through varying rectangle sizes, with countries like the United Kingdom and Switzerland appearing significantly larger than their eastern counterparts, denoting higher GDP per capita ratios. This visualization is a graphical abstract of the global economic hierarchy and the interplay between GDP and exports in different regions. Similar observations can be made to the treemap below.
 
 ```{r}
-#install.packages("ggplot2")
-#install.packages("ggExtra")
+p2 <- treemap(cleaned_data,
+        index = c("continent.x", "name"),
+        vSize = "import_usd",
+        vColor = "gdp_per_capita",
+        type = "value",
+          title = "Imports by Continent and GDP per Capita, 2020",
+        title.legend = "GDP per Capita"  
+)
+
+p2
+
+```
+From this Multivariate analysis, between the import and exports,
+
+
+#3 Building a geospatial network
+
+This analysis delves into global trade by mapping countries' trade networks with beef, directly linked to the Big Mac patty's economic footprint. By aligning the Big Mac Index with actual trade flows, symbolized by each country's ISO3 geocodes, we aim to clarify the economic forces shaping this iconic index, offering a pragmatic view of the global marketplace.
+```{r}
+#install.packages("tidygraph")
+library(tidygraph)
+library(igraph)
 library(ggplot2)
-library(ggExtra)
+library(ggraph)
+
+# Load the datasets
+import_export_beef <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/import_export_beef_v2.csv')
+bmi_data <- read.csv('data/bmi_data.csv')
+
+# Preview the datasets
+head(import_export_beef)
+head(bmi_data)
 ```
 
-#3 GEOSPATIAL TRADE NETWORK
 
 ```{r}
 library(sf)
 
 world_borders <- st_read("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/geospatial/TM_WORLD_BORDERS-0.3.shp")
 ```
+```{r}
+library(dplyr)
+library(igraph)
+
+# Assuming 'country_name' is the common key and 'ISO3' is the column you want to join from 'world_bmi' to 'import_export_beef'
+import_export_beef_enriched <- import_export_beef %>%
+  left_join(world_bmi, by = "country") %>% 
+  select(-matches("^world_bmi"))  # Remove duplicated columns if needed
+
+# Filter the dataset for a specific year
+year_2021_trade <- import_export_beef_enriched %>%
+ filter(Year == 2021) #!is.na(country)) #!is.na(Partner))  # Adjust the year as needed
+
+#Create an igraph object from the filtered data
+trade_network <- graph_from_data_frame(d = year_2021_trade, directed = TRUE)
+```
+
+# 3.1 Extracting centroids and the edges(link)
 
 ```{r}
 library(sf)
@@ -494,20 +596,7 @@ head(edges_geo)
 
 
 ```
-
-```{r}
-#net_geo_graph <- tbl_graph(nodes = network_nodes_geo,
-                           #edges = edges_geo, 
-                           #directed = TRUE)
-```
-
-```{r}
-#write.csv(network_nodes_geo, "C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/network_nodes_geo.csv", row.names = FALSE)
-```
-
-```{r}
-#write.csv(edges_geo, "C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/edges_geo.csv", row.names = FALSE)
-```
+# 3.2 Trade Network of beef imports and exports
 
 ```{r}
 library(ggplot2)
@@ -517,11 +606,15 @@ edges_geo <- edges_geo %>%
 
 ggplot() + 
   geom_sf(data = worldnew , fill = "#1A1A59", color = "#8080B3", line = "#8080B3") + 
-  geom_segment(data = edges_geo, aes(x = from_long, y = from_lat, xend = to_long, yend = to_lat, color = Trade), size = 0.001, alpha = 0.5) + 
+  geom_segment(data = edges_geo, aes(x = from_long, y = from_lat, xend = to_long, yend = to_lat, color = Trade), size = 0.001, alpha = 0.05) + 
   scale_color_manual(values = c("Import Quantity" = "#53C9CF", "Export Quantity" = "#FF6ABE")) +
   geom_point(data = network_nodes_geo, aes(x = longitude, y = latitude), color = "orange", size = 1) +
   theme_dark()
 ```
+In the visual representation of the trade network provided, each node (depicted as a point) signifies a country identified by its ISO3 geocode. The position of each node corresponds to the geographic coordinates (longitude and latitude) of the country’s centroid, anchoring the network in real-world geography.
+
+The links, or edges, illustrate the trade relationships between countries. Their thickness represents the trade volume or weight—thicker edges indicate a larger volume of trade. In this context, these volumes reflect the import and export of beef, which serves as a granular proxy for the Big Mac Index's core component, the beef patty.
+
 
 ```{r}
 # Assuming 'edges_geo' has 'from', 'to', 'Element', and 'Value' columns where 'Value' is the trade volume
@@ -557,14 +650,17 @@ network_nodes_geo_exports <- network_nodes_geo %>%
 ```{r}
 ggplot() + 
   geom_sf(data = worldnew , fill = "#140A29", color = "#8080B3", line = "#8080B3") + 
-  geom_point(data = network_nodes_geo_exports, aes(x = longitude, y = latitude, size = Size), color = "orange", alpha = 0.5) +
+  geom_point(data = network_nodes_geo_exports, aes(x = longitude, y = latitude, size = Size), color = "red", alpha = 0.3) +
   geom_segment(data = edges_geo, aes(x = from_long, y = from_lat, xend = to_long, yend = to_lat, color = Trade), 
-               size = 0.5, alpha = 0.02) + 
-  scale_color_manual(values = c("Import Quantity" = "#53C9CF", "Export Quantity" = "#FF6ABE")) +
+               size = 0.5, alpha = 0.01) + 
+  scale_color_manual(values = c("Import Quantity" = "#53C9CF", "Export Quantity" = "#FF8900")) +
   theme_dark() +
   guides(size = FALSE, color = guide_legend(override.aes = list(size = 2, alpha = 2))) +  
   labs(color = "Exports | Imports (Beef) ") 
 ```
+By mapping these trade flows onto a geospatial framework, we can interpret the complex web of global beef trade and its influence on the Big Mac Index. This intersection of geography and trade data provides a multifaceted view of the index, factoring in both the economic activity (trade volumes as edge weights) and the spatial distribution of this activity (node placement and connections on the map).
+
+Ultimately, this network offers insights into the global dynamics of beef trade, highlighting which countries are central players (high degree of centrality) and which hold strategic positions in trade routes (high betweenness centrality), all of which can influence the localized price of a Big Mac.
 
 ```{r}
 # Determine the range for the sizes in the plot
@@ -579,14 +675,13 @@ scaled_size <- (network_nodes_geo_exports$Size - size_range[1]) * scaling_factor
 
 ```
 
+
+
 ```{r}
 library(plotly)
 
 network_nodes_geo_exports$hover_text <- paste(
   "Country: ", network_nodes_geo_exports$name,
-  "<br>Import: ", #edges_geo$export_usd,  # Replace with your actual import column name
-  "<br>Export: ", #edges_geo$import_usd,  # Replace with your actual export column name
-  "<br>BMI USD Price: ", #edges_geo$bmi_usd_price,
   sep = ""
 )
 
@@ -599,7 +694,7 @@ p <- plot_geo(worldnew, locationmode = 'ISO-3') %>%
     hoverinfo = 'text',
     mode = 'markers',
     marker = list(
-      size = scaled_size,  # Make sure this is defined as shown in previous examples
+      size = scaled_size,  
       color = 'yellow',
       opacity = 0.3
     )
@@ -638,15 +733,8 @@ p <- p %>%
 p
 ```
 
-```{r}
-pacman::p_load(ggrepel, patchwork, 
-               ggthemes, hrbrthemes,
-               ggdist, ggridges,
-               colorspace, gridExtra, treemap, treemapify,
-               tidyverse, tmap, sf, tmaptools, dplyr, tibble, dplyr) 
-```
 
-# 4 CLUSTER ANALYSIS FOR TRADE
+# 4 Cluster Analysis for Trade
 
 In our exploration of global trade dynamics, specifically through the lens of beef exports and imports, we aim to uncover insights into the Big Mac Index, a whimsical gauge of purchasing power parity devised by The Economist. Analyzing beef trade patterns grants us a direct line of inquiry into the pricing mechanisms of the Big Mac, considering beef's pivotal role in its composition. This focus allows us to parse the supply chain intricacies and market conditions that dictate the variability in Big Mac prices across different regions. The rationale behind this targeted analysis is to use beef trade as a tangible metric for understanding broader economic trends and pricing pressures that ultimately influence consumer goods' costs.
 
@@ -1078,7 +1166,7 @@ Understanding these clusters can provide insights into regional pricing strategi
 
 
 
-```{library(dplyr)}
+```{r}
 library(cluster)  
 library(ggplot2)  
 
