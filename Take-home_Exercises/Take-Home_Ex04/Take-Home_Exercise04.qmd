@@ -37,6 +37,7 @@ library("countrycode")
 library("ggrepel")
 library(plotly)
 ```
+
 # 2 Choropleth
 
 The focus of this segment is purely for Exploratory analysis. The statistical and clustering will be conducted in Segment 4 under network analysis for trade
@@ -160,7 +161,7 @@ data("World")
 library(dplyr)
 
 wmpb_World <- World %>% 
-  dplyr::select(-HPI, -inequality, -footprint, -life_exp, -well_being, -gdp_cap_est)
+select(-HPI, -inequality, -footprint, -life_exp, -well_being, -gdp_cap_est)
 wmpb_World
 ```
 
