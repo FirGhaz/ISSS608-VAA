@@ -4,15 +4,12 @@ subtitle: "Take Home Exercise 04"
 author: "FirGhaz"
 date: 02/03/2024
 date modified: last modified
-execute:
-  eval: true
-  message: false
-  echo: true
-  warning: false
-  format:
+format:
   html:
-  code-fold: true
-  code-tools: false
+    code-fold: true
+    code-summary: "code block"
+    code-tools: false
+    code-copy: true
 ---
 
 This exercise aims to develop a Shiny application featuring an interactive choropleth map to analyze global trade networks in conjunction with the Big Mac Index. By integrating geographical data with economic indicators, the application will enable a visual exploration of how trade volumes and net exports correlate with price parity across different regions. The choropleth will serve as a dynamic tool to observe patterns, offering users the ability to drill down into country-specific trade connections and Index values.
@@ -63,8 +60,7 @@ worldnew %>%
 bmi_data_raw <- read_csv("data/bmi_data.csv")
 ```
 
-
-In this initial phase of the project, we are focusing on integrating ISO3 country codes into our dataset. These three-letter codes are an international standard for referencing countries, which will allow us to accurately link our trade data with the corresponding geographic entities. 
+In this initial phase of the project, we are focusing on integrating ISO3 country codes into our dataset. These three-letter codes are an international standard for referencing countries, which will allow us to accurately link our trade data with the corresponding geographic entities.
 
 ```{r}
 bmi_data_iso <- bmi_data_raw %>%
@@ -74,7 +70,6 @@ bmi_data_iso <- bmi_data_raw %>%
     destination = "iso3c")
   )
 ```
-
 
 ```{r}
 world_bmi <- worldnew %>%
@@ -109,6 +104,7 @@ world_bmi2 <- worldnew %>%
 
 print(world_bmi2)
 ```
+
 To have a sense of the BMI index over the selected countries over the years from 2002 to 2021. A plotly graph was plotted.
 
 ```{r}
@@ -154,20 +150,12 @@ bmi_geo
 ```
 
 ```{r}
-data("World")
-```
-
-```{r}
-library(dplyr)
-
-wmpb_World <- World %>% 
-select(-HPI, -inequality, -footprint, -life_exp, -well_being, -gdp_cap_est)
-wmpb_World
+wmpb_World <- st_read("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/geospatial/TM_WORLD_BORDERS-0.3.shp")
 ```
 
 ```{r}
 wmpb_World_BMI <- wmpb_World %>% left_join(bmi_data_raw,
-                          by = c("name" = "country"))
+                          by = c("NAME" = "country")) #altnative is name
 ```
 
 ```{r}
@@ -175,7 +163,7 @@ library(dplyr)
 
 wmpb_World_BMI_2020 <- wmpb_World_BMI %>%
   filter(year == 2020) %>% 
-  group_by(name) %>%
+  group_by(NAME) %>%
   #filter(
     #any(!is.na(currency_code)) & 
     #any(!is.na(bmi_localprice)) & 
@@ -195,8 +183,8 @@ wmpb_World_BMI_2020 <- wmpb_World_BMI %>%
 library(tmap)
 
 world_bmi_2020 <- wmpb_World_BMI_2020 %>%
-  dplyr::select (geometry, name, iso_a3) %>%
-  left_join(bmi_data_iso, by = c("iso_a3" = "Iso3"))  %>%
+  dplyr::select (geometry, NAME, ISO3) %>%
+  left_join(bmi_data_iso, by = c("ISO3" = "Iso3"))  %>%
   filter(year == 2020) 
   
 world_bmi_2020 <- world_bmi_2020 %>%
@@ -219,21 +207,21 @@ tm
 ```
 
 ```{r}
-tm_shape(wmpb_World_BMI_2020) +
-  tm_fill("bmi_usd_price",
-          style = "quantile",
-          palette = "Blues",
-          thres.poly = 0) + 
-  tm_facets(by="income_grp", 
-            free.coords=TRUE, 
-            drop.shapes=FALSE) +
-  tm_layout(legend.show = FALSE,
-            title.position = c("center", "right"), 
-            title.size = 20) +
-  tm_borders(alpha = 0.5)
+#tm_shape(wmpb_World_BMI_2020) +
+  #tm_fill("bmi_usd_price",
+          #style = "quantile",
+          #palette = "Blues",
+          #thres.poly = 0) + 
+ # tm_facets(by="income_grp", 
+            #free.coords=TRUE, 
+            #drop.shapes=FALSE) +
+  #tm_layout(legend.show = FALSE,
+            #title.position = c("center", "right"), 
+            #title.size = 20) +
+  #tm_borders(alpha = 0.5)
 ```
 
-### 2.1.1 Geo Percentile of BMI 
+### 2.1.1 Geo Percentile of BMI
 
 ```{r}
 library(sf)
@@ -290,17 +278,13 @@ percentmap("bmi_usd_price", wmpb_World_BMI_2020, legtitle = "Percentile", mtitle
 
 ```
 
-
 ### 2.1.2 Building a Boxmap
 
-*Distribution Overview:*
-The boxbreaks function calculates the interquartile range (IQR) of the bmi_usd_price variable to determine the "fences" or thresholds for outliers. It then establishes break points for categorizing regions: lower outliers, the first quartile (25%), the median (50%), the third quartile (75%), and upper outliers. This approach provides a quick way to identify where the majority of the data points lie in relation to the overall distribution and to spot regions with exceptionally high or low BMI prices.
+*Distribution Overview:* The boxbreaks function calculates the interquartile range (IQR) of the bmi_usd_price variable to determine the "fences" or thresholds for outliers. It then establishes break points for categorizing regions: lower outliers, the first quartile (25%), the median (50%), the third quartile (75%), and upper outliers. This approach provides a quick way to identify where the majority of the data points lie in relation to the overall distribution and to spot regions with exceptionally high or low BMI prices.
 
-*Geographic Variations:*
-By applying the boxmap function, we visually analyze the geographic distribution of Big Mac prices across different countries. This analysis can reveal patterns or clusters of higher or lower prices. For instance, higher prices in developed countries could reflect stronger currencies or higher living costs, while lower prices in developing countries might be attributed to lower production costs or weaker currencies.
+*Geographic Variations:* By applying the boxmap function, we visually analyze the geographic distribution of Big Mac prices across different countries. This analysis can reveal patterns or clusters of higher or lower prices. For instance, higher prices in developed countries could reflect stronger currencies or higher living costs, while lower prices in developing countries might be attributed to lower production costs or weaker currencies.
 
-*Outliers and Economic Insights:*
-Outliers identified through this method can offer insights into anomalies within the data. Lower outliers might indicate countries where Big Macs are unusually cheap, potentially due to lower labor and production costs or subsidy effects. Conversely, upper outliers might point to countries where Big Macs are disproportionately expensive, which could be due to import tariffs, high taxes, or significant demand relative to supply. Identifying these outliers can prompt further investigation into the economic policies, supply chain logistics, and market dynamics of these regions.
+*Outliers and Economic Insights:* Outliers identified through this method can offer insights into anomalies within the data. Lower outliers might indicate countries where Big Macs are unusually cheap, potentially due to lower labor and production costs or subsidy effects. Conversely, upper outliers might point to countries where Big Macs are disproportionately expensive, which could be due to import tariffs, high taxes, or significant demand relative to supply. Identifying these outliers can prompt further investigation into the economic policies, supply chain logistics, and market dynamics of these regions.
 
 ```{r}
 boxbreaks <- function(v,mult=1.5) {
@@ -382,26 +366,22 @@ boxmap <- function(vnam, df,
 ```{r}
 tmap_mode("view")
 boxmap("bmi_usd_price", wmpb_World_BMI_2020)+
-  tm_facets(by="continent.x", 
+  tm_facets(by="continent", 
             free.coords=TRUE, 
             drop.shapes=FALSE) 
 ```
 
-*Comparison by Continent:*
-The use of tm_facets to segment the map by continent allows for an examination of regional trends and comparisons. It can uncover how economic, cultural, and regional trade agreements influence the price of consumer goods like Big Macs. For example: 
-  - North America although USA and Canada are top 50 percentile, Mexico is lagging behind the big mac's indicator.
-  - Most of the EU countries are also in the 50 - 75% and above as compare to majority of Asia which still sits at <25% percentile especially in the South East Asia Region.
-  
-*Statistical Significance:*
-While this visual method offers valuable insights, it's also crucial to conduct further statistical tests to determine the significance of the observed patterns. For instance, analyses such as ANOVA or post-hoc tests can quantify whether the differences in Big Mac prices between continents or between outlier and non-outlier countries are statistically significant.
+*Comparison by Continent:* The use of tm_facets to segment the map by continent allows for an examination of regional trends and comparisons. It can uncover how economic, cultural, and regional trade agreements influence the price of consumer goods like Big Macs. For example: - North America although USA and Canada are top 50 percentile, Mexico is lagging behind the big mac's indicator. - Most of the EU countries are also in the 50 - 75% and above as compare to majority of Asia which still sits at \<25% percentile especially in the South East Asia Region.
 
+*Statistical Significance:* While this visual method offers valuable insights, it's also crucial to conduct further statistical tests to determine the significance of the observed patterns. For instance, analyses such as ANOVA or post-hoc tests can quantify whether the differences in Big Mac prices between continents or between outlier and non-outlier countries are statistically significant.
 
 ## 2.2 Treemap Multi Variate Analysis
+
 The treemap provides a hierarchical view of data and is particularly effective for showcasing proportional relationships using nested rectangles.
 
 ```{r}
 # First, ensure that "Seven seas (open ocean)" rows are removed.
-wmpb_World_BMI_2020 <- wmpb_World_BMI_2020[wmpb_World_BMI_2020$continent.x != "Seven seas (open ocean)", ]
+wmpb_World_BMI_2020 <- wmpb_World_BMI_2020[wmpb_World_BMI_2020$continent != "Seven seas (open ocean)", ]
 library(viridis)
 library(dplyr)
 
@@ -410,13 +390,13 @@ non_spatial_data <- as.data.frame(wmpb_World_BMI_2020)
 
 # Perform your filtering and factor level dropping
 cleaned_data <- non_spatial_data %>%
-  filter(continent.x != "Seven seas (open ocean)") %>%
+  filter(continent != "Seven seas (open ocean)") %>%
   droplevels()
 
 library(treemap)
 
 treemap(cleaned_data,
-        index = c("continent.x", "name"),
+        index = c("continent", "NAME"),
         vSize = "bmi_usd_price",
         vColor = "gdp_per_capita",
         type = "manual",
@@ -426,20 +406,14 @@ treemap(cleaned_data,
 )
 
 ```
+
 This treemap is a visual between countries' GDP per capita and Big Mac Index (BMI) prices in USD for 2020, highlighting economic disparities across continents. In Europe, the dark shades of affluent countries like Switzerland juxtapose with the lighter hues of Eastern nations, indicating a higher BMI aligned with greater wealth. Asia's patchwork reflects stark differences in economic development, while North America's uniform darkness suggests higher living costs in line with its economic status. Oceania and South America reveal variations in the cost of living, as seen through the diverse shades representing the BMI, suggesting distinct economic structures and market dynamics within these regions. This treemap serves as a succinct graphical summary of the intersection between a country's economic health and the relative cost of a globally recognized product.
 
-
 ```{r}
-wmpb_World_BMI_2020 <- wmpb_World_BMI_2020[wmpb_World_BMI_2020$continent.x != "Seven seas (open ocean)", ]
-
-library(dplyr)
-
-# Extract non-spatial data
-non_spatial_data <- as.data.frame(wmpb_World_BMI_2020)
 
 # Perform your filtering and factor level dropping
 cleaned_data <- non_spatial_data %>%
-  filter(continent.x != "Seven seas (open ocean)") %>%
+  filter(continent != "Seven seas (open ocean)") %>%
   droplevels()
 
 library(treemap)
@@ -447,7 +421,7 @@ library(gridExtra)
 
 # Generate the treemap plots
 p1 <- treemap(cleaned_data,
-        index = c("continent.x", "name"),
+        index = c("continent", "NAME"),
         vSize = "export_usd",
         vColor = "gdp_per_capita",
         type = "value",
@@ -456,11 +430,12 @@ p1 <- treemap(cleaned_data,
 )
 p1
 ```
+
 The treemap above provides a hierarchical view of data and is particularly effective for showcasing proportional relationships using nested rectangles. We can observe that Asian economies such as China and Japan occupy large areas, indicating a high GDP per capita combined with significant exports. Contrastingly, the smaller rectangles representing countries like the Philippines and Malaysia suggest lower GDP per capita figures. Additionally, the treemap highlights the prominence of North America, particularly the United States, which dominates the visual space reflecting its substantial GDP per capita and export volume. Europe's diverse economic status is represented through varying rectangle sizes, with countries like the United Kingdom and Switzerland appearing significantly larger than their eastern counterparts, denoting higher GDP per capita ratios. This visualization is a graphical abstract of the global economic hierarchy and the interplay between GDP and exports in different regions. Similar observations can be made to the treemap below.
 
 ```{r}
 p2 <- treemap(cleaned_data,
-        index = c("continent.x", "name"),
+        index = c("continent", "NAME"),
         vSize = "import_usd",
         vColor = "gdp_per_capita",
         type = "value",
@@ -471,12 +446,11 @@ p2 <- treemap(cleaned_data,
 p2
 
 ```
-From this Multivariate analysis, between the import and exports,
 
-
-#3 Building a geospatial network
+# 3.1 Extracting centroids and the edges(link)
 
 This analysis delves into global trade by mapping countries' trade networks with beef, directly linked to the Big Mac patty's economic footprint. By aligning the Big Mac Index with actual trade flows, symbolized by each country's ISO3 geocodes, we aim to clarify the economic forces shaping this iconic index, offering a pragmatic view of the global marketplace.
+
 ```{r}
 #install.packages("tidygraph")
 library(tidygraph)
@@ -493,12 +467,14 @@ head(import_export_beef)
 head(bmi_data)
 ```
 
-
 ```{r}
 library(sf)
 
 world_borders <- st_read("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/geospatial/TM_WORLD_BORDERS-0.3.shp")
 ```
+
+# 
+
 ```{r}
 library(dplyr)
 library(igraph)
@@ -516,7 +492,7 @@ year_2021_trade <- import_export_beef_enriched %>%
 trade_network <- graph_from_data_frame(d = year_2021_trade, directed = TRUE)
 ```
 
-# 3.1 Extracting centroids and the edges(link)
+# 
 
 ```{r}
 library(sf)
@@ -593,10 +569,10 @@ edges_geo <- edges_df %>%
   left_join(network_nodes_geo, by = c("to" = "ISO3")) %>%
   rename(to_lat = latitude, to_long = longitude)
 
-head(edges_geo)
 
 
 ```
+
 # 3.2 Trade Network of beef imports and exports
 
 ```{r}
@@ -612,10 +588,10 @@ ggplot() +
   geom_point(data = network_nodes_geo, aes(x = longitude, y = latitude), color = "orange", size = 1) +
   theme_dark()
 ```
+
 In the visual representation of the trade network provided, each node (depicted as a point) signifies a country identified by its ISO3 geocode. The position of each node corresponds to the geographic coordinates (longitude and latitude) of the country’s centroid, anchoring the network in real-world geography.
 
 The links, or edges, illustrate the trade relationships between countries. Their thickness represents the trade volume or weight—thicker edges indicate a larger volume of trade. In this context, these volumes reflect the import and export of beef, which serves as a granular proxy for the Big Mac Index's core component, the beef patty.
-
 
 ```{r}
 # Assuming 'edges_geo' has 'from', 'to', 'Element', and 'Value' columns where 'Value' is the trade volume
@@ -659,6 +635,7 @@ ggplot() +
   guides(size = FALSE, color = guide_legend(override.aes = list(size = 2, alpha = 2))) +  
   labs(color = "Exports | Imports (Beef) ") 
 ```
+
 By mapping these trade flows onto a geospatial framework, we can interpret the complex web of global beef trade and its influence on the Big Mac Index. This intersection of geography and trade data provides a multifaceted view of the index, factoring in both the economic activity (trade volumes as edge weights) and the spatial distribution of this activity (node placement and connections on the map).
 
 Ultimately, this network offers insights into the global dynamics of beef trade, highlighting which countries are central players (high degree of centrality) and which hold strategic positions in trade routes (high betweenness centrality), all of which can influence the localized price of a Big Mac.
@@ -675,8 +652,6 @@ scaling_factor <- (max_size - min_size) / (size_range[2] - size_range[1])
 scaled_size <- (network_nodes_geo_exports$Size - size_range[1]) * scaling_factor + min_size
 
 ```
-
-
 
 ```{r}
 library(plotly)
@@ -734,7 +709,6 @@ p <- p %>%
 p
 ```
 
-
 # 4 Cluster Analysis for Trade
 
 In our exploration of global trade dynamics, specifically through the lens of beef exports and imports, we aim to uncover insights into the Big Mac Index, a whimsical gauge of purchasing power parity devised by The Economist. Analyzing beef trade patterns grants us a direct line of inquiry into the pricing mechanisms of the Big Mac, considering beef's pivotal role in its composition. This focus allows us to parse the supply chain intricacies and market conditions that dictate the variability in Big Mac prices across different regions. The rationale behind this targeted analysis is to use beef trade as a tangible metric for understanding broader economic trends and pricing pressures that ultimately influence consumer goods' costs.
@@ -742,10 +716,6 @@ In our exploration of global trade dynamics, specifically through the lens of be
 To navigate this complex interplay, we've adopted a formula integrating critical trade data and economic indicators to model their relationship with the Big Mac Index. This formula captures the essence of trade balance, economic scale (granular and macro at the same time), and the specific impact of beef trade. It correlates net exports relative to GDP per capita with the proportions of beef exports and imports within total trade, providing a nuanced perspective on how trade dynamics influence market conditions and, by extension, Big Mac prices.
 
 Importing data
-
-```{r}
-big_mac <- read_csv("data/countries_with_complete_data.csv")
-```
 
 Loading packages and data
 
@@ -760,9 +730,6 @@ library(ggraph)
 import_export_beef <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/import_export_beef_v5.csv')
 bmi_data <- read.csv('data/bmi_data.csv')
 
-# Preview the datasets
-head(import_export_beef)
-head(bmi_data)
 
 ```
 
@@ -926,7 +893,7 @@ Side by side comparison of trade network patterns for 2021 and 2002.
 
 ## 4.2 Network Centrality and Community Clustering
 
-For our scope of the project, we will select 60+ countries with (1) significant trade activities and (2) complete data together with BMI(Index). A *Trade Connectivity Index (TCI)* will be calculated for each edge in the network will be calculated as follows:
+For our scope of the project, we will select 50+ countries with (1) significant trade activities and (2) complete data together with BMI(Index). A *Trade Connectivity Index (TCI)* will be calculated for each edge in the network will be calculated as follows:
 
 ![](images/TCI.png){width="305"}
 
@@ -961,8 +928,7 @@ bmi_edges_2021 <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home
   #mutate(country = as.character(country),
          #Partner = as.character(Partner))
 
-bmi_edges_2021
-bmi_node_2021
+
 ```
 
 ```{r}
@@ -971,9 +937,6 @@ bmi2021_graph <- tbl_graph(nodes = bmi_node_2021,
                             directed = TRUE)
 ```
 
-```{r}
-bmi2021_graph
-```
 
 ```{r}
 g <- ggraph(bmi2021_graph, layout = "sugiyama", circular = TRUE) +
@@ -1127,20 +1090,16 @@ centrality_measures <- data.frame(
   eigenvector = eigenvector_centrality
 )
 
-print(centrality_measures)
 
 
 centrality_measures_arranged <- centrality_measures %>%
   arrange(desc(degree)) 
 
-# View the arranged dataframe
-print(centrality_measures_arranged)
+
 
 ```
 
-
 In the Shiny App, we will allow the audience to explore these statistical methods to gain insights from the networks.
-
 
 | Betweenness                                                                                                                                                                                                | Degree                                                                                                                                                                       | EigenVector                                                                                                                                                                                                                                                   | Closeness                                                                                                                                                                                           |
 |------------------|------------------|------------------|------------------|
@@ -1148,24 +1107,17 @@ In the Shiny App, we will allow the audience to explore these statistical method
 | Some countries much higher centrality, which could mean **the trade network relies heavily on these nodes**, possibly creating vulnerability to disruptions.                                               | Degree centrality can suggest potential market influence, with highly connected nodes being able to leverage their position for competitive advantage.                       | This measure reflects the potential for a node to access and influence the broader network through its connections.                                                                                                                                           | Closeness centrality offers insight **into the speed at which a country** can react to supply and demand changes across the global network                                                          |
 | Countries with lower betweenness centrality might have more **direct trade links or may not be critical transit points within the network.**                                                               | A spread of degree centrality across the network would indicate a democratized trading environment, but a concentration suggests a few key players dominate.                 | Low eigenvector centrality could indicate peripheral or less influential roles within the trading network, possibly **representing newer or more specialized markets**.                                                                                       | Low closeness centrality might point to **potential delays in trade flows or inefficiencies,** possibly due to geographical or logistical factor                                                    |
 
-:::callout: Summary of Insights
-1. Network Roles and Big Mac Pricing:
+:::callout: Summary of Insights 1. Network Roles and Big Mac Pricing:
 
-Countries central in the beef trade network, indicated by high betweenness or degree centrality, may have more stable and competitive beef pricing due to their numerous trade links, which could affect their local Big Mac prices.
-The presence of key influencers, as suggested by eigenvector centrality, could indicate the potential for price setting or market influence, which can trickle down to the pricing of beef and related products like the Big Mac.
+Countries central in the beef trade network, indicated by high betweenness or degree centrality, may have more stable and competitive beef pricing due to their numerous trade links, which could affect their local Big Mac prices. The presence of key influencers, as suggested by eigenvector centrality, could indicate the potential for price setting or market influence, which can trickle down to the pricing of beef and related products like the Big Mac.
 
-2. Trade Efficiency and Cost:
+2.  Trade Efficiency and Cost:
 
-Closeness centrality can signal efficient trade practices and the potential for rapid adjustment to market changes, which could lead to more competitive and stable pricing for beef, affecting the Big Mac Index.
-Any delays or inefficiencies in beef imports could increase costs for local producers, potentially raising Big Mac prices in countries with lower closeness centrality.
+Closeness centrality can signal efficient trade practices and the potential for rapid adjustment to market changes, which could lead to more competitive and stable pricing for beef, affecting the Big Mac Index. Any delays or inefficiencies in beef imports could increase costs for local producers, potentially raising Big Mac prices in countries with lower closeness centrality.
 
-3. Cluster Analysis and Market Groupings:
+3.  Cluster Analysis and Market Groupings:
 
-Clustering helps identify groups of countries with similar trade patterns, which can show regional variations in Big Mac prices due to similarities in trade dynamics and economic profiles.
-Understanding these clusters can provide insights into regional pricing strategies for the Big Mac and indicate how economic or trade changes in one country might impact others within the same cluster.
-:::
-
-
+Clustering helps identify groups of countries with similar trade patterns, which can show regional variations in Big Mac prices due to similarities in trade dynamics and economic profiles. Understanding these clusters can provide insights into regional pricing strategies for the Big Mac and indicate how economic or trade changes in one country might impact others within the same cluster. :::
 
 ```{r}
 library(cluster)  
@@ -1365,7 +1317,6 @@ visNetwork(nodes = bmi_node_2021, edges = bmi_edges_2021_aggregated) %>%
 
 ```
 
-
 **Spinglass**
 
 ```{r}
@@ -1429,27 +1380,20 @@ visNetwork(nodes = bmi_node_2021, edges = bmi_edges_2021_aggregated) %>%
 
 ```
 
-:::Callout:Insights
+::: Callout:Insights
+1.  Leading Eigenvector
 
-1. Leading Eigenvector
+Insight: This method often identifies communities based on the influence of nodes. Nodes with high eigenvector centrality are connected to other influential nodes, which can form a community. Implication for Big Mac Index: Communities identified by the Leading Eigenvector method might represent countries with influential trade relationships or economic ties that can impact the Big Mac Index through pricing standards, trade agreements, or shared economic policies.
 
-Insight: This method often identifies communities based on the influence of nodes. Nodes with high eigenvector centrality are connected to other influential nodes, which can form a community.
-Implication for Big Mac Index: Communities identified by the Leading Eigenvector method might represent countries with influential trade relationships or economic ties that can impact the Big Mac Index through pricing standards, trade agreements, or shared economic policies.
+2.  Walktrap
 
-2. Walktrap
+Insight: Walktrap finds communities by simulating random walks on the network, with the idea that walks are "trapped" within densely connected parts of the graph. Implication for Big Mac Index: The communities detected could reflect clusters of countries where trade flow is more frequent or robust, possibly due to geographic proximity or trade agreements, which in turn may affect the local pricing strategies included in the Big Mac Index.
 
-Insight: Walktrap finds communities by simulating random walks on the network, with the idea that walks are "trapped" within densely connected parts of the graph.
-Implication for Big Mac Index: The communities detected could reflect clusters of countries where trade flow is more frequent or robust, possibly due to geographic proximity or trade agreements, which in turn may affect the local pricing strategies included in the Big Mac Index.
+3.  Spinglass
 
-3. Spinglass
+Insight: This method uses a spin model from statistical mechanics and is particularly good at detecting community structures where communities may be hierarchically nested. Implication for Big Mac Index: Spinglass communities may reflect complex and layered trade relationships, possibly uncovering hierarchies in economic interactions that could influence the Big Mac Index.
 
-Insight: This method uses a spin model from statistical mechanics and is particularly good at detecting community structures where communities may be hierarchically nested.
-Implication for Big Mac Index: Spinglass communities may reflect complex and layered trade relationships, possibly uncovering hierarchies in economic interactions that could influence the Big Mac Index.
+4.  Comparison Summary:
 
-4. Comparison Summary:
-
-The Leading Eigenvector method might highlight dominant countries in trade that potentially set benchmarks for the Big Mac Index.
-The Walktrap method may reveal more about regional trading blocks or groups of countries with stronger internal trade links that could have similar Big Mac pricing due to shared market conditions.
-The Spinglass method can uncover more nuanced and multi-level communities, possibly highlighting intricate trade relationships and their cascading effects on the Big Mac Index.
+The Leading Eigenvector method might highlight dominant countries in trade that potentially set benchmarks for the Big Mac Index. The Walktrap method may reveal more about regional trading blocks or groups of countries with stronger internal trade links that could have similar Big Mac pricing due to shared market conditions. The Spinglass method can uncover more nuanced and multi-level communities, possibly highlighting intricate trade relationships and their cascading effects on the Big Mac Index.
 :::
-
