@@ -6,7 +6,7 @@ date: 02/03/2024
 date modified: last modified
 format:
   html:
-    code-fold: true
+    code-fold: false
     code-summary: "code block"
     code-tools: false
     code-copy: true
