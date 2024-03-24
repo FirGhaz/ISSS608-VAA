@@ -19,6 +19,8 @@ The final deliverable will be a user-centric Shiny application, optimized for en
 # 1 Load Packages
 
 ```{r}
+#| warning: false 
+#| echo: false
 library(tidyverse)
 library(sf)
 library(rnaturalearth)
@@ -32,12 +34,15 @@ library(ggforce)
 
 # 2 EDA Trade on GEO
 ```{r}
+#| warning: false 
+#| echo: false
 worldly<- st_read("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/geospatial/TM_WORLD_BORDERS-0.3.shp")
 worldly_projected <- st_transform(worldly, "+proj=robin")  
 data <- read_csv("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/bmi_data_2021_carto.csv")
 ```
 ```{r}
-#map <- world%>%
+#| warning: false 
+#| echo: false
 map_pre <- worldly_projected%>%
   left_join(data)
 
@@ -57,6 +62,8 @@ ggplot(map, aes(fill=total_trade))+
   geom_sf() 
 ```
 ```{r}
+#| warning: false 
+#| echo: false
 dorl<-cartogram::cartogram_dorling(
   map, weight='total_trade', k = 3,
   m_weight = 1, itermax = 1000
@@ -102,6 +109,8 @@ ggplot(map)+
 
 
 ```{r}
+#| warning: false 
+#| echo: false
 dorl2 <- dorl2 %>%
   mutate(
     ratio_export = export_usd /total_trade,
@@ -134,6 +143,8 @@ ggplot(map)+
   theme_custom
 ```
 ```{r}
+#| warning: false 
+#| echo: false
 circleFun <- function(
     center=c(0,0),   # center of the circle 
     diameter=1,      # diameter 
@@ -240,12 +251,16 @@ p +  annotate("point", x = legend_x, y = legend_y_total_trade, shape = 21, size 
   theme_custom
 ```
 ```{r}
+#| warning: false 
+#| echo: false
 bmi_node_2021 <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/bmi_node_2021_add.csv')
 bmi_edges_2021 <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/import_export_beef_edges5-2021.csv')
 ```
 
 
 ```{r}
+#| warning: false 
+#| echo: false
 library(sf)
 library(ggplot2)
 library(ggforce) 
@@ -366,6 +381,8 @@ theme_custom
 Emphasis here is to give them the option to play with the nodes, layout and geom_edge functions.
 
 ```{r}
+#| warning: false 
+#| echo: false
 library(tidygraph)
 library(igraph)
 library(ggplot2)
@@ -381,8 +398,8 @@ bmi2021_graph <- tbl_graph(nodes = bmi_node_2021,
 
 
 ```{r}
-#|warning=FALSE
-#|echo=FALSE
+#| warning: false 
+#| echo: false 
 g <- ggraph(bmi2021_graph, layout = "sugiyama", circular = TRUE) +
   geom_edge_arc(aes(color = Trade, width = Value), alpha = 0.6) + 
   scale_edge_color_manual(values = c("Import Quantity" = "#00CCB0", "Export Quantity" = "#FF6ABE")) +
@@ -429,8 +446,10 @@ In our exploration of global trade dynamics, specifically through the lens of be
 
 To navigate this complex interplay, we've adopted a formula integrating critical trade data and economic indicators to model their relationship with the Big Mac Index. This formula captures the essence of trade balance, economic scale (granular and macro at the same time), and the specific impact of beef trade. It correlates net exports relative to GDP per capita with the proportions of beef exports and imports within total trade, providing a nuanced perspective on how trade dynamics influence market conditions and, by extension, Big Mac prices.
 
-### 3.1.1 Centrality
+## 3.2 Computing Centrality
 ```{r}
+#| warning: false 
+#| echo: false
 library(ggraph)
 library(igraph)
 
@@ -464,6 +483,8 @@ In-Degree Centrality: This measures the number of incoming connections to a node
 Out-Degree Centrality: This measures the number of outgoing connections from a node. Like in-degree centrality, it is applicable in directed networks. A high out-degree centrality signifies that a node actively reaches out to many other nodes, which can indicate a source or distributor of information, goods, or influence within the network
 
 ```{r}
+#| warning: false 
+#| echo: false
 library(ggraph)
 library(igraph)
 
@@ -491,7 +512,8 @@ Degree centrality is a straightforward but powerful concept in network analysis,
 **Eigenvector Centrality** Eigenvector centrality measures a node's influence based on the principle that connections to high-scoring nodes contribute more to the score of the node in question.
 
 ```{r}
-
+#| warning: false 
+#| echo: false
 eigenvector_centrality <- eigen_centrality(bmi2021_graph)$vector
 
 print(summary(eigenvector_centrality))
@@ -503,6 +525,8 @@ print(head(V(bmi2021_graph)$eigenvector))
 ```
 
 ```{r}
+#| warning: false 
+#| echo: false
 # Now, use ggraph to visualize the network
 g_eigen <- ggraph(bmi2021_graph, layout = "fr") + 
   geom_edge_link(aes(width = Value), alpha = 0.5) +
@@ -522,6 +546,8 @@ Eigenvector centrality is useful for identifying influential nodes in a network 
 **Closeness centrality**
 
 ```{r}
+#| warning: false 
+#| echo: false
 library(igraph)
 
 # Assuming bmi2021_graph is your igraph graph object
@@ -545,6 +571,8 @@ print(g_closeness)
 Putting the results in a dataframe.
 
 ```{r}
+#| warning: false 
+#| echo: false
 library(igraph)
 library(dplyr)
 
@@ -590,13 +618,15 @@ Closeness centrality can signal efficient trade practices and the potential for 
 
 Clustering helps identify groups of countries with similar trade patterns, which can show regional variations in Big Mac prices due to similarities in trade dynamics and economic profiles. Understanding these clusters can provide insights into regional pricing strategies for the Big Mac and indicate how economic or trade changes in one country might impact others within the same cluster. :::
 
-### 4.2.2 Computing Community Indices
+## 3.3 Computing Community Indices
 
 Tidygraph package inherits many of the community detection algorithms imbedded into igraph We will utilise 3 community detection algo: (1) Leading eigenvector (group_leading_eigen), (2) Walktrap and (3) Spinglass (group_spinglass).Some community algorithms are designed to take into account direction or weight, while others ignore it.
 
 **group_leading Eigenvector**
 
 ```{r}
+#| warning: false 
+#| echo: false
 g <- bmi2021_graph %>%
   mutate(community = as.factor(group_leading_eigen(weights = Value))) %>%
   ggraph(layout = "fr") + 
@@ -607,6 +637,8 @@ g <- bmi2021_graph %>%
 ```
 
 ```{r}
+#| warning: false 
+#| echo: false
 library(igraph)
 library(visNetwork)
 library(visNetwork) 
@@ -659,6 +691,8 @@ visNetwork(nodes = bmi_node_2021, edges = bmi_edges_2021_aggregated) %>%
 **WalkTrap** The Walktrap algorithm is another method for detecting communities in graphs. It attempts to find densely connected subgraphs (communities) in a graph based on random walks. The idea is that short random walks tend to stay in the same community.
 
 ```{r}
+#| warning: false 
+#| echo: false
 library(tidygraph)
 library(ggraph)
 
@@ -678,6 +712,8 @@ g
 ```
 
 ```{r}
+#| warning: false 
+#| echo: false
 library(igraph)
 library(visNetwork)
 
@@ -725,6 +761,8 @@ visNetwork(nodes = bmi_node_2021, edges = bmi_edges_2021_aggregated) %>%
 **Spinglass**
 
 ```{r}
+#| warning: false 
+#| echo: false
 g <- bmi2021_graph %>%
   mutate(community = as.factor(group_spinglass(weights = Value))) %>%
   ggraph(layout = "fr") + 
@@ -737,6 +775,8 @@ g
 ```
 
 ```{r}
+#| warning: false 
+#| echo: false
 library(igraph)
 
 # Perform Spinglass community detection
