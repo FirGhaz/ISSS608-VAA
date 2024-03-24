@@ -381,7 +381,7 @@ bmi2021_graph <- tbl_graph(nodes = bmi_node_2021,
 
 
 ```{r}
-#|warning = FALSE
+#|warning=FALSE
 #|echo=FALSE
 g <- ggraph(bmi2021_graph, layout = "sugiyama", circular = TRUE) +
   geom_edge_arc(aes(color = Trade, width = Value), alpha = 0.6) + 
