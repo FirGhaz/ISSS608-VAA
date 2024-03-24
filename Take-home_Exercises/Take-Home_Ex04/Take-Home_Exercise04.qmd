@@ -28,6 +28,16 @@ library(ggrepel)
 library(plotly)
 library(cartogram)
 library(ggforce)
+library(igraph)
+library(dplyr)
+library(png)
+library(visNetwork)
+library(htmlwidgets)
+library(base64enc)
+library(tidygraph)
+library(ggplot2)
+library(ggraph)
+
 ```
 
 # 2 EDA Trade on GEO
@@ -247,11 +257,18 @@ p +  annotate("point", x = legend_x, y = legend_y_total_trade, shape = 21, size 
   theme_custom
 ```
 
+
 ```{r}
 #| warning: false 
 bmi_node_2021 <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/bmi_node_2021_add.csv')
 bmi_edges_2021 <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/import_export_beef_edges5-2021.csv')
 ```
+
+The provided image is a geo-network visualization that maps the global trade network for beef, highlighting the interconnected trade relationships of over 50 countries with a detailed focus on 28 of them. The visualization uses directional arcs and varying circle sizes to depict the flow and volume of beef exports and imports between nations. Such a graphic representation allows for a quick assessment of trade balances and intensities, with larger circles likely indicating major trade hubs or high trade volumes.
+
+This visualization is particularly valuable in the context of economic studies, including the analysis of the Big Mac Index. The Big Mac Index is an informal benchmark used to compare the purchasing power between currencies by using the price of a Big Mac as a standard good. By overlaying the beef trade data, one can derive insights into local market prices of beef, a critical component of the Big Mac, hence affecting the index's outcomes. For instance, beef-exporting countries might have cheaper Big Mac prices due to lower local beef costs, while importing countries could face higher prices reflecting the import costs.
+
+Overall, the map serves as a powerful tool in illustrating how trade flows influence economic indicators like the Big Mac Index. It encapsulates the complexity of global trade in a digestible format, offering economists and decision-makers a clear visualization of how commodity movements impact local market economics and consumer prices. This, in turn, can guide more informed policy decisions and economic analyses.
 
 ```{r}
 #| warning: false 
@@ -399,9 +416,7 @@ V(bmi2021_graph)$gdp_per_capita<- bmi_node_2021$gdp_per_capita
 V(bmi2021_graph)$inflation <- bmi_node_2021$inflation
 
 ggraph(bmi2021_graph, layout = "kk") + #layout options = kk, fr, nicely,
-  geom_node_point(aes(fill = V(bmi2021_graph)$bmi_usd_price , size = V(bmi2021_graph)$bmi_usd_price, color = continent, show.legend=FALSE),
-                  
-                  )+
+  geom_node_point(aes(fill = V(bmi2021_graph)$bmi_usd_price , size = V(bmi2021_graph)$bmi_usd_price, color = continent, show.legend=FALSE))+
   geom_edge_link2(aes(color = Trade, width = Value), alpha = 0.6, show.legend=FALSE) + 
   scale_edge_color_manual(values = c("Import Quantity" = "#00CCB0", "Export Quantity" = "#FF6ABE")) +
   scale_edge_width(range = c(0.5, 4)) +
@@ -414,6 +429,7 @@ ggraph(bmi2021_graph, layout = "kk") + #layout options = kk, fr, nicely,
 ```
 
 ```{r}
+#| warning: false
 library(visNetwork)
 library(htmlwidgets)
 
@@ -425,14 +441,12 @@ nodes_data <- data.frame(id = V(bmi2021_graph)$country,
                                        "<br><b>GDP:</b>", V(bmi2021_graph)$gdp_per_capita,
                                        "<br><b>Inf:</b>", V(bmi2021_graph)$inflation))
 
-# Create a data frame for edges that visNetwork can use
 edges_data <- data.frame(from = bmi_edges_2021$Origin, 
                          to = bmi_edges_2021$Partners,
                          value = bmi_edges_2021$Value,
                          title = bmi_edges_2021$Trade,
                          arrows = 'to')
 
-# Now let's create the visNetwork graph
 network <- visNetwork(nodes_data, edges_data, width = "100%", height = "400px") %>%
   visNodes(size = "bmi_usd_price", shadow = TRUE,
            color = list(background = "white", border = "#2B7CE9"),
@@ -444,7 +458,6 @@ network <- visNetwork(nodes_data, edges_data, width = "100%", height = "400px") 
   visLayout(randomSeed = 123)
 
 
-# Add custom CSS to change the background color
 network <- network %>% 
   htmlwidgets::onRender("
     function(el, x) {
@@ -454,6 +467,50 @@ network <- network %>%
 
 # Print the network to display it
 network
+```
+
+Just for the Fun of it!
+
+```{r}
+#| warning: false
+library(png)
+library(visNetwork)
+library(htmlwidgets)
+library(base64enc)
+
+# Load the image file
+img_path <- "C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/images/Bigmac-removebg-preview.png" 
+img <- readPNG(img_path)
+
+# Convert the image to base64
+img_base64 <- base64enc::dataURI(file = img_path, mime = "image/png")
+
+# Update the 'nodes_data' dataframe to include the image for each node
+nodes_data$id <- V(bmi2021_graph)$country
+nodes_data$label <- V(bmi2021_graph)$country
+nodes_data$shape <- "image"
+nodes_data$image <- img_base64 # Assign the same image to all nodes for simplicity
+
+# Build the visNetwork object as usual
+network <- visNetwork(nodes_data, edges_data, width = "100%", height = "400px") %>%
+  visNodes(size = V(bmi2021_graph)$bmi_usd_price, shape = "image", image = nodes_data$image, borderWidth = 1, color = list(background = "white", border = "#2B7CE9"),
+           font = list(color = "white")) %>%
+  visEdges(smooth = FALSE, color = list(color = "#f2e901", highlight = "#FF4F09")) %>%
+  visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+  visInteraction(navigationButtons = TRUE) %>%
+  visLayout(randomSeed = 123)
+
+# Customize the background color with custom CSS
+network <- network %>% 
+  htmlwidgets::onRender("
+    function(el, x) {
+      el.style.backgroundColor = 'black';
+    }
+  ")
+
+network
+
+
 ```
 
 
@@ -497,7 +554,7 @@ bmi2021_graph <- igraph::set_vertex_attr(bmi2021_graph, "betweenness", value = i
 
 
 g <- ggraph(bmi2021_graph, layout = "fr") +
-  geom_edge_link(aes(width = Value), alpha = 0.5) +
+  geom_edge_link(aes(width = Value), alpha = 0.5, show.legend = FALSE) +
   scale_edge_width(range = c(0.1, 5)) +
   geom_node_point(aes(size = betweenness), color = "black") +
   geom_node_text(aes(label = country), repel = TRUE, size = 2, hjust = 0.6, vjust = -1.8, color = "black") +
@@ -523,17 +580,12 @@ Out-Degree Centrality: This measures the number of outgoing connections from a n
 
 ```{r}
 #| warning: false 
-#| echo: false
-library(ggraph)
-library(igraph)
 
-# Assuming bmi2021_graph is an igraph object
-# Compute degree centrality and add it to the graph object
 bmi2021_graph <- igraph::set_vertex_attr(bmi2021_graph, "degree", value = igraph::degree(bmi2021_graph))
 
 # Plotting the graph with ggraph
 g <- ggraph(bmi2021_graph, layout = "fr") +
-  geom_edge_link(aes(width = Value), alpha = 0.5) + 
+  geom_edge_link(aes(width = Value), alpha = 0.5,show.legend = FALSE) + 
   scale_edge_width(range = c(0.1, 5)) +
   geom_node_point(aes(size = degree, color = continent)) + # Size nodes by degree centrality and color by continent
   geom_node_text(aes(label = country), repel = TRUE, size = 2, hjust = 0.5, color = "black", fontface = "bold") +
@@ -552,7 +604,7 @@ Degree centrality is a straightforward but powerful concept in network analysis,
 
 ```{r}
 #| warning: false 
-#| echo: false
+
 eigenvector_centrality <- eigen_centrality(bmi2021_graph)$vector
 
 print(summary(eigenvector_centrality))
@@ -565,10 +617,10 @@ print(head(V(bmi2021_graph)$eigenvector))
 
 ```{r}
 #| warning: false 
-#| echo: false
+
 # Now, use ggraph to visualize the network
 g_eigen <- ggraph(bmi2021_graph, layout = "fr") + 
-  geom_edge_link(aes(width = Value), alpha = 0.5) +
+  geom_edge_link(aes(width = Value), alpha = 0.5,show.legend = FALSE) +
   scale_edge_width(range = c(0.1, 5)) +
   geom_node_point(aes(size = eigenvector, color = continent)) +
   geom_node_text(aes(label = country), repel = TRUE, size = 3, color = "black") +
@@ -587,14 +639,14 @@ Eigenvector centrality is useful for identifying influential nodes in a network 
 ```{r}
 #| warning: false 
 #| echo: false
-library(igraph)
+
 
 # Assuming bmi2021_graph is your igraph graph object
 V(bmi2021_graph)$closeness <- closeness(bmi2021_graph)
 
 # Visualize the network with closeness centrality
 g_closeness <- ggraph(bmi2021_graph, layout = "fr") + 
-  geom_edge_link(aes(width = Value), alpha = 0.5) +
+  geom_edge_link(aes(width = Value), alpha = 0.5,show.legend = FALSE) +
   scale_edge_width(range = c(0.1, 5)) +
   geom_node_point(aes(size = closeness, color = continent), alpha = 0.7) +
   geom_node_text(aes(label = country), repel = TRUE, size = 2) +
@@ -631,11 +683,25 @@ centrality_measures <- data.frame(
 
 
 centrality_measures_arranged <- centrality_measures %>%
-  arrange(desc(degree)) 
+  arrange(desc(eigenvector)) 
 
-
-
+print(centrality_measures_arranged)
 ```
+
+*Degree Centrality*: The simplest form of centrality, degree centrality, counts how many connections (edges) a node has. In directed networks, you can further distinguish between in-degree (number of incoming edges) and out-degree (number of outgoing edges). Nodes with a high degree centrality are considered highly connected or active within the network.
+
+*Closeness Centrality*: This measure calculates how close a node is to all other nodes in the network by considering the shortest paths. A node with a high closeness centrality can quickly interact with all others because it has the shortest average distance to all other nodes.
+
+*Betweenness Centrality*: Betweenness centrality quantifies the number of times a node acts as a bridge along the shortest path between two other nodes. Nodes with high betweenness centrality have significant control over information flow within the network because they lie on many shortest paths between other nodes.
+
+*Eigenvector Centrality*: This measure considers not just the quantity of connections a node has, but also the quality. A node scores high in eigenvector centrality if it is connected to other nodes that are themselves central within the network. This measure reflects the intuition that not all connections are equal, and being connected to highly connected nodes contributes more to a node's score.
+
+
+
+
+
+
+
 
 In the Shiny App, we will allow the audience to explore these statistical methods to gain insights from the networks.
 
@@ -659,164 +725,180 @@ Clustering helps identify groups of countries with similar trade patterns, which
 
 ## 3.3 Computing Community Indices
 
-Tidygraph package inherits many of the community detection algorithms imbedded into igraph We will utilise 3 community detection algo: (1) Leading eigenvector (group_leading_eigen), (2) Walktrap and (3) Spinglass (group_spinglass).Some community algorithms are designed to take into account direction or weight, while others ignore it.
+Tidygraph package inherits many of the community detection algorithms imbedded into igraph We will utilise 2 community detection algo: (1) Walktrap and (2) Spinglass (group_spinglass).Some community algorithms are designed to take into account direction or weight, while others ignore it.
 
-**group_leading Eigenvector**
-
-```{r}
-#| warning: false 
-
-g <- bmi2021_graph %>%
-  mutate(community = as.factor(group_leading_eigen(weights = Value))) %>%
-  ggraph(layout = "fr") + 
-  geom_edge_link(aes(width = Value), alpha = 0.2) +
-  scale_edge_width(range = c(0.1, 5)) +
-  geom_node_point(aes(colour = community), size = 3) +
-  theme_graph()
-```
-
-```{r}
-#| warning: false 
-
-library(igraph)
-library(visNetwork)
-
-
-communities <- cluster_leading_eigen(bmi2021_graph, weights = E(bmi2021_graph)$Value)
-
-# Add community info to the nodes dataframe
-bmi_node_2021$community <- communities$membership
-
-# Ensure 'id' column for joining and 'label' for visNetwork node labels
-bmi_node_2021$label <- bmi_node_2021$country
-
-bmi_node_2021$community <- as.factor(bmi_node_2021$community)
-
-num_communities <- length(unique(bmi_node_2021$community))
-
-# Generate a color for each community
-# Use colorRampPalette to create more colors if needed
-color_palette <- colorRampPalette(RColorBrewer::brewer.pal(min(9, num_communities), name = "Set1"))
-community_colors <- color_palette(num_communities)
-
-# Map community IDs to colors
-color_mapping <- setNames(community_colors, levels(bmi_node_2021$community))
-bmi_node_2021$color <- color_mapping[bmi_node_2021$community]
-
-bmi_edges_2021_aggregated <- bmi_edges_2021 %>%
-  left_join(bmi_node_2021, by = c("Origin" = "country")) %>%
-  rename(from = id) %>%
-  left_join(bmi_node_2021, by = c("Partners" = "country")) %>%
-  rename(to = id) %>%
-   group_by(from, to) %>%
-    summarise(Value = n()) %>%
- filter(from!=to) %>%
-  #filter(Value > 1) %>%
-  ungroup()
-bmi_node_2021$label <- bmi_node_2021$country
-
-# Create the network visualization
-visNetwork(nodes = bmi_node_2021, edges = bmi_edges_2021_aggregated) %>%
-  visIgraphLayout(layout = "layout_nicely") %>%
-  visNodes(aes(color = "community"), shape = "dot", scaling = list(label = list(enabled = TRUE)),
-           font = list(size = 35, face = "arial", color = "#000000", bold = "true")) %>%
-  visEdges(arrows = "to") %>%
-  visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
-  visLayout(randomSeed = 123) %>%
-  visLegend()
-
-```
 
 **WalkTrap** The Walktrap algorithm is another method for detecting communities in graphs. It attempts to find densely connected subgraphs (communities) in a graph based on random walks. The idea is that short random walks tend to stay in the same community.
 
 ```{r}
 #| warning: false 
-#| echo: false
-library(tidygraph)
-library(ggraph)
+
+# Assuming bmi2021_graph is already created and is an igraph object
+# Calibrating Parameters for Spinglass
+steps = 100 # (2 to 100)
 
 # Ensure bmi2021_graph is a tbl_graph; if it's an igraph object, convert it
 bmi2021_graph_tbl <- as_tbl_graph(bmi2021_graph)
 
-g <- bmi2021_graph_tbl %>%
-  mutate(community = as.factor(group_walktrap())) %>%
-  ggraph(layout = "fr") + 
-  geom_edge_link(aes(width = Value), alpha = 0.2) +
-  scale_edge_width(range = c(0.1, 5)) +
-  geom_node_point(aes(colour = community)) +
-  theme_graph()
+walktrap_communities <- cluster_walktrap(bmi2021_graph, 
+                                           steps = steps)
+# Assign community membership to nodes for visualization
+V(bmi2021_graph)$community <- as.factor(membership(walktrap_communities))
+
+set.seed(123)
+g <- ggraph(bmi2021_graph, layout = 'kk') + #can  choose "fr", "kk", "circle", "graphopt"
+  geom_edge_link2(aes(width = Value), alpha = 0.5) +
+  scale_edge_width(range = c(0.5, 8)) +
+  geom_node_point(aes(fill = bmi_usd_price, size = bmi_usd_price, color = community), show.legend = FALSE) +
+  geom_node_text(aes(label = country), repel = TRUE, size = 2, hjust = 0.6, vjust = -1.8, color = "black") +
+  theme_graph()+
+  labs(fill = "BMI USD Price", color = "Community")
 
 g
 
 ```
+*Calling out the communities* - These communities will be passed on for regression.
+```{r}
+community_membership <- membership(walktrap_communities)
+node_names <- V(bmi2021_graph)$country 
+
+if(length(community_membership) == length(node_names)) {
+    node_stats <- data.frame(
+        node = node_names,
+        community = as.factor(community_membership)
+    )
+  
+    
+    countries_in_community <- aggregate(node ~ community, data = node_stats, FUN = function(x) paste(x, collapse = ", "))
+  
+    # Print the list of countries by community
+    print(countries_in_community)
+} else {
+    print("Mismatch in lengths of community memberships and node names.")
+}
+```
 
 ```{r}
 #| warning: false 
-#| echo: false
-library(igraph)
-library(visNetwork)
 
-# Perform Walktrap community detection
 communities_walktrap <- cluster_walktrap(bmi2021_graph, weights = E(bmi2021_graph)$Value)
 
-# Add community info to the nodes data frame
-bmi_node_2021$community <- communities_walktrap$membership
+# Add community membership directly into the graph object
+V(bmi2021_graph)$community <- as.factor(membership(communities_walktrap))
 
-# Convert community IDs to a factor
-bmi_node_2021$community <- as.factor(bmi_node_2021$community)
+# Create nodes data frame
+nodes_data <- data.frame(
+  id = V(bmi2021_graph)$country,  # Assuming 'name' attribute contains the country names
+  label = V(bmi2021_graph)$country,
+  value = V(bmi2021_graph)$bmi_usd_price, # Adjust attribute names as necessary
+  title = paste("<b>BMI:</b>", V(bmi2021_graph)$bmi_usd_price,
+                "<br><b>GDP:</b>", V(bmi2021_graph)$gdp_per_capita,
+                "<br><b>Inflation:</b>", V(bmi2021_graph)$inflation),
+  community = V(bmi2021_graph)$community
+)
 
-# Generate a color for each community
-num_communities <- length(unique(bmi_node_2021$community))
+# Assign colors to communities
+num_communities <- length(unique(nodes_data$community))
 color_palette <- colorRampPalette(RColorBrewer::brewer.pal(min(9, num_communities), "Set1"))
 community_colors <- color_palette(num_communities)
-color_mapping <- setNames(community_colors, levels(bmi_node_2021$community))
-bmi_node_2021$color <- color_mapping[bmi_node_2021$community]
+color_mapping <- setNames(community_colors, levels(nodes_data$community))
+nodes_data$color <- color_mapping[nodes_data$community]
 
-# Ensure 'id' column for joining and 'label' for visNetwork node labels
-bmi_node_2021$label <- bmi_node_2021$country
 
-# Preparing edges data frame for visNetwork
-bmi_edges_2021_aggregated <- bmi_edges_2021 %>%
-  left_join(bmi_node_2021, by = c("Origin" = "country")) %>%
-  rename(from = id) %>%
-  left_join(bmi_node_2021, by = c("Partners" = "country")) %>%
-  rename(to = id) %>%
-  group_by(from, to) %>%
-  summarise(Value = n()) %>%
-  filter(from != to) %>%
-  ungroup()
+edges_data <- data.frame(from = bmi_edges_2021$Origin, 
+                         to = bmi_edges_2021$Partners,
+                         value = bmi_edges_2021$Value,
+                         title = bmi_edges_2021$Trade,
+                         arrows = 'to')
 
-# Create the network visualization with visNetwork
-visNetwork(nodes = bmi_node_2021, edges = bmi_edges_2021_aggregated) %>%
-  visIgraphLayout(layout = "layout_nicely") %>%
-  visNodes(color = "color", shape = "dot", label = "label", scaling = list(label = list(enabled = TRUE)), font = list(size = 35, face = "arial", color = "#000000", bold = "true")) %>%
-  visEdges(arrows = "to") %>%
+# Create the network visualization
+network <- visNetwork(nodes_data, edges_data) %>%
+  visNodes(aes(fill = "community", color = "community"), shape = "dot", scaling = list(label = list(enabled = TRUE), size = 8), color = list(background = "white", border = "#2B7CE9"),
+           font = list(color = "white")) %>%
+  visEdges(smooth = TRUE, color = list(color = "#A5ABB6", highlight = "#FF4F09", arrows = "to")) %>%
   visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
-  visLegend() %>%
-  visLayout(randomSeed = 123)
+  visLayout(randomSeed = 123) %>%
+  visInteraction(navigationButtons = TRUE) %>%
+  visLegend()
+
+
+# Customize the background color with custom CSS
+network <- network %>% 
+  htmlwidgets::onRender("
+    function(el, x) {
+      el.style.backgroundColor = 'black';
+    }
+  ")
+
+
+network
+
+
 
 ```
 
 **Spinglass**
+Exposing the calibrating parameters for this community detection algo.
+
+spins: The number of spin states. This is a crucial parameter that can indirectly determine the number of communities detected. A larger number of spins allows the algorithm to explore a more significant number of potential community structures.
+
+gamma: The resolution parameter influences the size of the communities detected. Higher values of gamma can lead to finer, smaller communities, while lower values can result in larger, more aggregated communities.
 
 ```{r}
 #| warning: false 
 
-g <- bmi2021_graph %>%
-  mutate(community = as.factor(group_spinglass(weights = Value))) %>%
-  ggraph(layout = "fr") + 
-  geom_edge_link(aes(width = Value), alpha = 0.2) +
-  scale_edge_width(range = c(0.1, 5)) +
-  geom_node_point(aes(colour = community)) +
-  theme_graph()
+# Calculate betweenness to visualize node importance
+V(bmi2021_graph)$betweenness <- betweenness(bmi2021_graph)
 
-g
+# Assuming bmi2021_graph is already created and is an igraph object
+# Calibrating Parameters for Spinglass
+spins = 15 # (2 to 15)
+gamma = 1 # (1 to 15)
+
+spinglass_communities <- cluster_spinglass(bmi2021_graph, 
+                                           spins = spins, 
+                                           gamma = gamma)
+
+# Assign community membership to nodes for visualization
+V(bmi2021_graph)$community <- as.factor(membership(spinglass_communities))
+
+# Visualize the graph
+set.seed(123) # For reproducible layout
+g <- ggraph(bmi2021_graph, layout = 'kk') + 
+  geom_edge_link(aes(width = Value), alpha = 0.5) +
+  scale_edge_width(range = c(0.5, 8)) + 
+  geom_node_point(aes(fill = bmi_usd_price, size = bmi_usd_price, color = community), show.legend = FALSE) +
+  geom_node_text(aes(label = country), repel = TRUE, size = 2, hjust = 0.6, vjust = -1.8, color = "black") +
+  theme_graph() +
+  labs(fill = "BMI USD Price", color = "Community", size = "Betweenness")
+
+print(g)
+```
+
+*Calling out the communities* - These communities will be passed on for regression.
+```{r}
+# Assuming you've already created 'node_stats' as previously discussed
+community_membership <- membership(spinglass_communities)
+node_names <- V(bmi2021_graph)$country  # Ensure this matches your node naming
+
+if(length(community_membership) == length(node_names)) {
+    node_stats <- data.frame(
+        node = node_names,
+        community = as.factor(community_membership)
+    )
+  
+    # Group by community and concatenate country names
+    countries_in_community <- aggregate(node ~ community, data = node_stats, FUN = function(x) paste(x, collapse = ", "))
+  
+    # Print the list of countries by community
+    print(countries_in_community)
+} else {
+    print("Mismatch in lengths of community memberships and node names.")
+}
 ```
 
 ```{r}
 #| warning: false 
-
-library(igraph)
 
 # Perform Spinglass community detection
 communities_spinglass <- cluster_spinglass(bmi2021_graph, weights = E(bmi2021_graph)$weight)
@@ -853,31 +935,38 @@ bmi_edges_2021_aggregated <- bmi_edges_2021 %>%
 bmi_node_2021$label <- bmi_node_2021$country
 
 # Create the network visualization
-visNetwork(nodes = bmi_node_2021, edges = bmi_edges_2021_aggregated) %>%
-  visIgraphLayout(layout = "layout_nicely") %>%
-  visNodes(aes(color = "community"), shape = "dot", scaling = list(label = list(enabled = TRUE)),
-           font = list(size = 35, face = "arial", color = "#000000", bold = "true")) %>%
-  visEdges(arrows = "to") %>%
+network <- visNetwork(nodes = bmi_node_2021, edges = bmi_edges_2021_aggregated) %>%
+  visNodes(aes(fill = "community", color = "community"), shape = "dot", scaling = list(label = list(enabled = TRUE)),
+           font = list(size = 20, face = "arial", color = "white", bold = "true")) %>%
+  visEdges(smooth = FALSE, color = list(color = "#A5ABB6", highlight = "#FF4F09", arrows = "to")) %>%
   visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
   visLayout(randomSeed = 123) %>%
+  visInteraction(navigationButtons = TRUE) %>%
   visLegend()
+
+  # Add custom CSS to change the background color
+network <- network %>% 
+  htmlwidgets::onRender("
+    function(el, x) {
+      el.style.backgroundColor = 'black';
+    }
+  ")
+
+
+network
 
 ```
 
 ::: Callout:Insights
-1.  Leading Eigenvector
-
-Insight: This method often identifies communities based on the influence of nodes. Nodes with high eigenvector centrality are connected to other influential nodes, which can form a community. Implication for Big Mac Index: Communities identified by the Leading Eigenvector method might represent countries with influential trade relationships or economic ties that can impact the Big Mac Index through pricing standards, trade agreements, or shared economic policies.
-
-2.  Walktrap
+1.  Walktrap
 
 Insight: Walktrap finds communities by simulating random walks on the network, with the idea that walks are "trapped" within densely connected parts of the graph. Implication for Big Mac Index: The communities detected could reflect clusters of countries where trade flow is more frequent or robust, possibly due to geographic proximity or trade agreements, which in turn may affect the local pricing strategies included in the Big Mac Index.
 
-3.  Spinglass
+2.  Spinglass
 
 Insight: This method uses a spin model from statistical mechanics and is particularly good at detecting community structures where communities may be hierarchically nested. Implication for Big Mac Index: Spinglass communities may reflect complex and layered trade relationships, possibly uncovering hierarchies in economic interactions that could influence the Big Mac Index.
 
-4.  Comparison Summary:
+3.  Comparison Summary:
 
-The Leading Eigenvector method might highlight dominant countries in trade that potentially set benchmarks for the Big Mac Index. The Walktrap method may reveal more about regional trading blocks or groups of countries with stronger internal trade links that could have similar Big Mac pricing due to shared market conditions. The Spinglass method can uncover more nuanced and multi-level communities, possibly highlighting intricate trade relationships and their cascading effects on the Big Mac Index.
+The Walktrap method may reveal more about regional trading blocks or groups of countries with stronger internal trade links that could have similar Big Mac pricing due to shared market conditions. The Spinglass method can uncover more nuanced and multi-level communities, possibly highlighting intricate trade relationships and their cascading effects on the Big Mac Index.
 :::
