@@ -6,7 +6,7 @@ date: 02/03/2024
 date modified: last modified
 format:
   html:
-    code-fold: false
+    code-fold: true
     code-summary: "code block"
     code-tools: false
     code-copy: true
@@ -20,7 +20,6 @@ The final deliverable will be a user-centric Shiny application, optimized for en
 
 ```{r}
 #| warning: false 
-#| echo: false
 library(tidyverse)
 library(sf)
 library(rnaturalearth)
@@ -31,18 +30,17 @@ library(cartogram)
 library(ggforce)
 ```
 
-
 # 2 EDA Trade on GEO
+
 ```{r}
 #| warning: false 
-#| echo: false
 worldly<- st_read("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/geospatial/TM_WORLD_BORDERS-0.3.shp")
 worldly_projected <- st_transform(worldly, "+proj=robin")  
 data <- read_csv("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/bmi_data_2021_carto.csv")
 ```
+
 ```{r}
 #| warning: false 
-#| echo: false
 map_pre <- worldly_projected%>%
   left_join(data)
 
@@ -61,9 +59,9 @@ map <- map_pre%>%
 ggplot(map, aes(fill=total_trade))+
   geom_sf() 
 ```
+
 ```{r}
 #| warning: false 
-#| echo: false
 dorl<-cartogram::cartogram_dorling(
   map, weight='total_trade', k = 3,
   m_weight = 1, itermax = 1000
@@ -107,10 +105,8 @@ ggplot(map)+
   theme_custom
 ```
 
-
 ```{r}
 #| warning: false 
-#| echo: false
 dorl2 <- dorl2 %>%
   mutate(
     ratio_export = export_usd /total_trade,
@@ -142,9 +138,9 @@ ggplot(map)+
   )+
   theme_custom
 ```
+
 ```{r}
 #| warning: false 
-#| echo: false
 circleFun <- function(
     center=c(0,0),   # center of the circle 
     diameter=1,      # diameter 
@@ -250,17 +246,16 @@ p +  annotate("point", x = legend_x, y = legend_y_total_trade, shape = 21, size 
   annotate("text", x = legend_x + 1, y = legend_y_imports, label = "Trade 2021", hjust = 1.16, vjust = -0.5, colour = "white", size=4.5, fontface = "bold", family = "Arial") +
   theme_custom
 ```
+
 ```{r}
 #| warning: false 
-#| echo: false
 bmi_node_2021 <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/bmi_node_2021_add.csv')
 bmi_edges_2021 <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/import_export_beef_edges5-2021.csv')
 ```
 
-
 ```{r}
 #| warning: false 
-#| echo: false
+
 library(sf)
 library(ggplot2)
 library(ggforce) 
@@ -269,12 +264,12 @@ library(geosphere)
 
 # Assuming 'bmi_node_2021' is your dataframe and it has columns 'LON' and 'LAT'
 # Make sure 'bmi_node_2021' is a data frame and 'LON' and 'LAT' are not factors
-bmi_node_2021 <- data.frame(bmi_node_2021)
-bmi_node_2021$LON <- as.numeric(as.character(bmi_node_2021$LON))
-bmi_node_2021$LAT <- as.numeric(as.character(bmi_node_2021$LAT))
+bmi_node_2021a <- data.frame(bmi_node_2021)
+bmi_node_2021a$LON <- as.numeric(as.character(bmi_node_2021a$LON))
+bmi_node_2021a$LAT <- as.numeric(as.character(bmi_node_2021a$LAT))
 
 # Convert your data frame to an sf object
-node_sf <- st_as_sf(bmi_node_2021, coords = c("LON", "LAT"), crs = 4326)
+node_sf <- st_as_sf(bmi_node_2021a, coords = c("LON", "LAT"), crs = 4326)
 node_sf_projected <- st_transform(node_sf, st_crs(worldly_projected))
 
 
@@ -307,8 +302,8 @@ edges_sf_projected <- st_transform(edges_sf_df, st_crs(worldly_projected))
 
 
 
-col.1 <- adjustcolor("orangered", alpha=0.015)
-col.2 <- adjustcolor("yellow", alpha=0.015)
+col.1 <- adjustcolor("orangered", alpha=0.02)
+col.2 <- adjustcolor("yellow", alpha=0.02)
 edge.pal <- colorRampPalette(c(col.1, col.2), alpha = TRUE)
 
 # Assuming 'Weight' is normalized between 0 and 1 for color mapping
@@ -375,48 +370,92 @@ p + annotate("point", x = legend_x, y = legend_y_total_trade, shape = 21, size =
 theme_custom
 ```
 
-
 # 3 Visualising the Network: Exploratory Data Analysis
 
 Emphasis here is to give them the option to play with the nodes, layout and geom_edge functions.
 
 ```{r}
 #| warning: false 
-#| echo: false
 library(tidygraph)
 library(igraph)
 library(ggplot2)
 library(ggraph)
+library(visNetwork) 
 ```
 
-
 ```{r}
+#| warning: false
 bmi2021_graph <- tbl_graph(nodes = bmi_node_2021,
                            edges = bmi_edges_2021, 
                             directed = TRUE)
 ```
 
-
 ```{r}
 #| warning: false 
-#| echo: false 
-g <- ggraph(bmi2021_graph, layout = "sugiyama", circular = TRUE) +
-  geom_edge_arc(aes(color = Trade, width = Value), alpha = 0.6) + 
-  scale_edge_color_manual(values = c("Import Quantity" = "#00CCB0", "Export Quantity" = "#FF6ABE")) +
-  scale_edge_width(range = c(0.2, 2)) +
-  geom_node_point(aes(colour = continent), size = 2.5, shape=20) +
-  geom_node_text(aes(label = country), repel = TRUE, size = 2, hjust = 0.6, vjust = -1.8, color = "white") +
-  theme_graph() +
-  guides(color = guide_legend(title = "Type"),
-         size = "none", 
-         edge_alpha = "none", 
-         edge_width = guide_legend(override.aes = list(color = "white"))) + # Ensure this line is correctly formatted
-  coord_fixed() +
-  theme_graph(background = '#1D201F', text_colour = 'white')
 
-g
+#this are the node attributes
+V(bmi2021_graph)$bmi_usd_price <- bmi_node_2021$bmi_usd_price
+V(bmi2021_graph)$gdp_per_capita<- bmi_node_2021$gdp_per_capita
+V(bmi2021_graph)$inflation <- bmi_node_2021$inflation
+
+ggraph(bmi2021_graph, layout = "kk") + #layout options = kk, fr, nicely,
+  geom_node_point(aes(fill = V(bmi2021_graph)$bmi_usd_price , size = V(bmi2021_graph)$bmi_usd_price, color = continent, show.legend=FALSE),
+                  
+                  )+
+  geom_edge_link2(aes(color = Trade, width = Value), alpha = 0.6, show.legend=FALSE) + 
+  scale_edge_color_manual(values = c("Import Quantity" = "#00CCB0", "Export Quantity" = "#FF6ABE")) +
+  scale_edge_width(range = c(0.5, 4)) +
+  geom_node_text(aes(label = country), repel = TRUE, size = 2, hjust = 0.6, vjust = -1.8, color = "white") +
+  theme_graph(background = '#1D201F', text_colour = 'white') +
+  guides(color = guide_legend(title = "Type"),
+         edge_width = guide_legend(override.aes = list(color = "white")))
+  coord_fixed() 
 
 ```
+
+```{r}
+library(visNetwork)
+library(htmlwidgets)
+
+nodes_data <- data.frame(id = V(bmi2021_graph)$country, 
+                         label = V(bmi2021_graph)$country,
+                         value = V(bmi2021_graph)$bmi_usd_price, #to change to inflation, gdp
+                         group = V(bmi2021_graph)$continent,
+                         title = paste("<b>BMI:</b>", V(bmi2021_graph)$bmi_usd_price,
+                                       "<br><b>GDP:</b>", V(bmi2021_graph)$gdp_per_capita,
+                                       "<br><b>Inf:</b>", V(bmi2021_graph)$inflation))
+
+# Create a data frame for edges that visNetwork can use
+edges_data <- data.frame(from = bmi_edges_2021$Origin, 
+                         to = bmi_edges_2021$Partners,
+                         value = bmi_edges_2021$Value,
+                         title = bmi_edges_2021$Trade,
+                         arrows = 'to')
+
+# Now let's create the visNetwork graph
+network <- visNetwork(nodes_data, edges_data, width = "100%", height = "400px") %>%
+  visNodes(size = "bmi_usd_price", shadow = TRUE,
+           color = list(background = "white", border = "#2B7CE9"),
+           font = list(color = "white")) %>%
+  visEdges(smooth = FALSE, color = list(color = "#A5ABB6", highlight = "#FF4F09")) %>%
+  visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
+  visLegend() %>%
+  visInteraction(navigationButtons = TRUE) %>%
+  visLayout(randomSeed = 123)
+
+
+# Add custom CSS to change the background color
+network <- network %>% 
+  htmlwidgets::onRender("
+    function(el, x) {
+      el.style.backgroundColor = 'black';
+    }
+  ")
+
+# Print the network to display it
+network
+```
+
 
 ## 3.1 Network Centrality and Community Clustering
 
@@ -447,9 +486,9 @@ In our exploration of global trade dynamics, specifically through the lens of be
 To navigate this complex interplay, we've adopted a formula integrating critical trade data and economic indicators to model their relationship with the Big Mac Index. This formula captures the essence of trade balance, economic scale (granular and macro at the same time), and the specific impact of beef trade. It correlates net exports relative to GDP per capita with the proportions of beef exports and imports within total trade, providing a nuanced perspective on how trade dynamics influence market conditions and, by extension, Big Mac prices.
 
 ## 3.2 Computing Centrality
+
 ```{r}
 #| warning: false 
-#| echo: false
 library(ggraph)
 library(igraph)
 
@@ -601,7 +640,7 @@ centrality_measures_arranged <- centrality_measures %>%
 In the Shiny App, we will allow the audience to explore these statistical methods to gain insights from the networks.
 
 | Betweenness                                                                                                                                                                                                | Degree                                                                                                                                                                       | EigenVector                                                                                                                                                                                                                                                   | Closeness                                                                                                                                                                                           |
-|------------------|------------------|------------------|------------------|
+|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Nodes like the United States and Brazil have high betweenness centrality, suggesting that they act as significant connectors or bridges within the network, **potentially controlling the flow of trade.** | Nodes such as the United States and Brazil have high degrees, meaning they have numerous trade connections, possibly making them **central hubs in the beef trade network.** | The eigenvector centrality considers not just the number but the quality of connections. Nodes with high eigenvector centrality, like the **United States and Australia, are connected to other well-connected nodes, hinting at influential trade cliques.** | High closeness centrality for nodes like the United States and South Africa suggests that they can quickly interact or trade with all other nodes, indicating efficiency in their trade operations. |
 | Some countries much higher centrality, which could mean **the trade network relies heavily on these nodes**, possibly creating vulnerability to disruptions.                                               | Degree centrality can suggest potential market influence, with highly connected nodes being able to leverage their position for competitive advantage.                       | This measure reflects the potential for a node to access and influence the broader network through its connections.                                                                                                                                           | Closeness centrality offers insight **into the speed at which a country** can react to supply and demand changes across the global network                                                          |
 | Countries with lower betweenness centrality might have more **direct trade links or may not be critical transit points within the network.**                                                               | A spread of degree centrality across the network would indicate a democratized trading environment, but a concentration suggests a few key players dominate.                 | Low eigenvector centrality could indicate peripheral or less influential roles within the trading network, possibly **representing newer or more specialized markets**.                                                                                       | Low closeness centrality might point to **potential delays in trade flows or inefficiencies,** possibly due to geographical or logistical factor                                                    |
@@ -626,7 +665,7 @@ Tidygraph package inherits many of the community detection algorithms imbedded i
 
 ```{r}
 #| warning: false 
-#| echo: false
+
 g <- bmi2021_graph %>%
   mutate(community = as.factor(group_leading_eigen(weights = Value))) %>%
   ggraph(layout = "fr") + 
@@ -638,10 +677,10 @@ g <- bmi2021_graph %>%
 
 ```{r}
 #| warning: false 
-#| echo: false
+
 library(igraph)
 library(visNetwork)
-library(visNetwork) 
+
 
 communities <- cluster_leading_eigen(bmi2021_graph, weights = E(bmi2021_graph)$Value)
 
@@ -762,7 +801,7 @@ visNetwork(nodes = bmi_node_2021, edges = bmi_edges_2021_aggregated) %>%
 
 ```{r}
 #| warning: false 
-#| echo: false
+
 g <- bmi2021_graph %>%
   mutate(community = as.factor(group_spinglass(weights = Value))) %>%
   ggraph(layout = "fr") + 
@@ -776,7 +815,7 @@ g
 
 ```{r}
 #| warning: false 
-#| echo: false
+
 library(igraph)
 
 # Perform Spinglass community detection
@@ -842,4 +881,3 @@ Insight: This method uses a spin model from statistical mechanics and is particu
 
 The Leading Eigenvector method might highlight dominant countries in trade that potentially set benchmarks for the Big Mac Index. The Walktrap method may reveal more about regional trading blocks or groups of countries with stronger internal trade links that could have similar Big Mac pricing due to shared market conditions. The Spinglass method can uncover more nuanced and multi-level communities, possibly highlighting intricate trade relationships and their cascading effects on the Big Mac Index.
 :::
-
