@@ -16,882 +16,392 @@ This exercise aims to develop a Shiny application featuring an interactive choro
 
 The final deliverable will be a user-centric Shiny application, optimized for engagement and insight discovery. It will be complemented by a concise report summarizing the analytical narratives that emerge from the visualization. This endeavor will not only underscore the practicality of geospatial data in economic analysis but also aims to enrich the discourse on the implications of trade dynamics for market pricing mechanisms like the Big Mac Index.
 
-# 1 Loading Packages
+# 1 Load Packages
 
 ```{r}
-if (!require("tidyverse")) install.packages("tidyverse", dependencies = TRUE)
-if (!require("sf")) install.packages("sf", dependencies = TRUE)
-if (!require("rnaturalearth")) install.packages("rnaturalearth", dependencies = TRUE)
-if (!require("countrycode")) install.packages("countrycode", dependencies = TRUE)
-if (!require("ggrepel")) install.packages("ggrepel", dependencies = TRUE)
-```
-
-```{r}
-library("tidyverse")
-library("sf")
-library("rnaturalearth")
-library("countrycode")
-library("ggrepel")
+library(tidyverse)
+library(sf)
+library(rnaturalearth)
+library(countrycode)
+library(ggrepel)
 library(plotly)
+library(cartogram)
+library(ggforce)
 ```
 
-# 2 Choropleth
 
-The focus of this segment is purely for Exploratory analysis. The statistical and clustering will be conducted in Segment 4 under network analysis for trade
-
+# 2 EDA Trade on GEO
 ```{r}
-worldnew <- ne_countries(scale="small", returnclass = "sf")
+worldly<- st_read("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/geospatial/TM_WORLD_BORDERS-0.3.shp")
+worldly_projected <- st_transform(worldly, "+proj=robin")  
+data <- read_csv("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/bmi_data_2021_carto.csv")
 ```
-
-Change map projection and coordinate reference system
-
 ```{r}
-worldnew %>%
-  #can use moll, aeqd, goode, robin 
-  #projection website: https://proj.org/operations/projections/
-  st_transform(crs = "+proj=robin") %>% 
-  ggplot() +
-  geom_sf() +
-  #coord_sf(datum = NA) +
-  theme_minimal()
+#map <- world%>%
+map_pre <- worldly_projected%>%
+  left_join(data)
+
+clean <- data%>%
+  select(iso_a3 ='ISO3',bmi_usd_price=bmi_usd_price, total_trade=total_trade, import_usd=import_usd, export_usd,)
+
+# Join data to world map
+map <- map_pre%>%
+  left_join(clean)%>%
+  select(-c(country, id, year, continent, iso_a3))%>%
+  mutate(across(c(bmi_usd_price:population), ~ifelse(is.na(.), 0, .)))
+  #drop_na(bmi_usd_price)
+
+#st_write(map, "C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/map2021_data.csv")
+
+ggplot(map, aes(fill=total_trade))+
+  geom_sf() 
 ```
-
 ```{r}
-bmi_data_raw <- read_csv("data/bmi_data.csv")
-```
+dorl<-cartogram::cartogram_dorling(
+  map, weight='total_trade', k = 3,
+  m_weight = 1, itermax = 1000
+)
+# Set colors
+col_world <- "#9CB4BF"
+col_back <- "#1D201F"
 
-In this initial phase of the project, we are focusing on integrating ISO3 country codes into our dataset. These three-letter codes are an international standard for referencing countries, which will allow us to accurately link our trade data with the corresponding geographic entities.
+# Set theme
+theme_custom <- theme_void()+
+  theme(plot.background = element_rect(fill=col_back,color=NA))
 
-```{r}
-bmi_data_iso <- bmi_data_raw %>%
-  mutate (Iso3 = countrycode :: countrycode(
-    sourcevar = country,
-    origin = "country.name",
-    destination = "iso3c")
+dorl<-dorl%>%
+  mutate(
+    # Compute area
+    ar=as.numeric(st_area(dorl)),
+    # Compute radius based on area
+    rad=as.numeric(sqrt(ar/pi))
   )
+
+# Extract centroids for each circle
+centr <- dorl%>%
+  st_centroid()%>%
+  st_coordinates()
+
+# Combine data
+dorl2 <- tibble(dorl,X=centr[,1],Y=centr[,2])%>%
+  arrange(-total_trade)
+
+ggplot(map)+
+  # World basemap
+  geom_sf(
+    worldly,mapping=aes(geometry=geometry),
+    fill=col_world,color=alpha("dimgrey",0.25)
+  )+
+  # Draw Dorling cartogram with geom_circle()
+  ggforce::geom_circle(
+    data = dorl2, aes(x0 = X, y0 = Y, r = rad),
+    fill=alpha("dimgrey",0.75),color=alpha("white",0.2)
+  )+
+  theme_custom
 ```
 
-```{r}
-world_bmi <- worldnew %>%
-  dplyr::select (geometry, name, iso_a3) %>%
-  left_join(bmi_data_iso, by = c("iso_a3" = "Iso3")) # %>%
-  #filter(year == 2020)
 
-world_bmi
+```{r}
+dorl2 <- dorl2 %>%
+  mutate(
+    ratio_export = export_usd /total_trade,
+    ratio_import = import_usd/total_trade
+  )%>%
+  mutate(
+    rad_export=sqrt(rad*rad*ratio_export),
+    rad_import=sqrt(rad*rad*ratio_import)
+  )
+
+col_export <- "#f2e901"
+col_import <- "#FF4843"
+
+ggplot(map)+
+  # World basemap
+  geom_sf(
+    worldly,mapping=aes(geometry=geometry),
+    fill=col_world,color=alpha("dimgrey",0.25)
+  )+
+  # Draw Dorling cartogram with geom_circle()
+  ggforce::geom_circle(
+    data = dorl2, aes(x0 = X, y0 = Y, r = rad),
+    fill=alpha("dimgrey",0.75),color=alpha("white",0.2)
+  )+
+  # Draw circle for crops (or grass)
+  ggforce::geom_circle(
+    data = dorl2, aes(x0 = X, y0 = Y, r = rad_export),
+    fill=col_export,color=NA
+  )+
+  theme_custom
+```
+```{r}
+circleFun <- function(
+    center=c(0,0),   # center of the circle 
+    diameter=1,      # diameter 
+    npoints=100,     # number of points to draw the circle
+    start=0, end=2   # start point/end point
+  ){
+      tt <- seq(start*pi, end*pi, length.out=npoints)
+      tb <- tibble(
+        x = center[1] + diameter / 2 * cos(tt), 
+        y = center[2] + diameter / 2 * sin(tt)
+      )
+    return(tb)
+}
+
+half_export <- bind_cols(
+  ISO3 = rep(dorl2$ISO3[1],100),
+  circleFun(
+    c(dorl2$X[1],dorl2$Y[1]),dorl2$rad_export[1]*2, start=1.5, end=2.5
+  ))
+
+half_import <- bind_cols(
+  ISO3 = rep(dorl2$ISO3[1],100),
+  circleFun(
+    c(dorl2$X[1],dorl2$Y[1]),dorl2$rad_import[1]*2, start=0.5, end=1.5
+  ))
+
+col_world <- "#9CB4BF"
+col_back <- "#1D201F"
+
+# Set theme
+theme_custom <- theme_void()+
+  theme(plot.background = element_rect(fill=col_back,color=NA))
+
+
+
+# Make loop for all countries
+for (i in 2:dim(dorl2)[1]){
+
+  # Draw for exports
+  temp_export <- bind_cols(
+    ISO3 = rep(dorl2$ISO3[i],100),
+    circleFun(
+      c(dorl2$X[i],dorl2$Y[i]),dorl2$rad_export[i]*2, start=1.5, end=2.5
+    ))
+  # Draw for imports
+  temp_import <- bind_cols(
+    ISO3 = rep(dorl2$ISO3[i],100),
+    circleFun(
+      c(dorl2$X[i],dorl2$Y[i]),dorl2$rad_import[i]*2, start=0.5, end=1.5
+    ))
+  
+  half_export<-half_export%>%
+    bind_rows(temp_export)
+  
+  half_import<-half_import%>%
+    bind_rows(temp_import)
+}
+df <- data.frame(
+  x = 1:3,
+  y = c(3, 2, 1),
+  group = c("A", "B", "C")
+)
+
+# Make map
+p <- ggplot(map)+
+  # World basemap
+  geom_sf(
+    worldly,mapping=aes(geometry=geometry),
+    fill=col_world,color=alpha("dimgrey",0.25)
+    
+  )+
+  # Draw Dorling cartogram with geom_circle()
+  ggforce::geom_circle(
+    data = dorl2, aes(x0 = X, y0 = Y, r = rad),
+    fill=alpha("dimgrey",0.75),color=alpha("white",0.2)
+  )+
+  # Draw half circle for crop with geom_polygon
+  geom_polygon(
+    half_export,
+    mapping=aes(x,y,group=ISO3),
+    fill=col_export,color=NA
+  )+ 
+  # Draw half circle for grass with geom_polygon
+  geom_polygon(
+    half_import,
+    mapping=aes(x,y,group=ISO3),
+    fill=col_import,color=NA
+  )+ 
+  theme_custom
+
+x_range <- range(dorl2$X, na.rm = TRUE)
+y_range <- range(dorl2$Y, na.rm = TRUE)
+# Calculate positions for legend items based on the range
+legend_x <- x_range[1] * 1.20 # Place legend slightly to the right of the X range minimum
+legend_y_total_trade <- y_range[1] * 1.15 # Start legend slightly above the Y range minimum
+legend_y_exports <- legend_y_total_trade + abs(y_range[2] - y_range[1]) * 0.05 # 5% above total trade
+legend_y_imports <- legend_y_exports + abs(y_range[2] - y_range[1]) * 0.05
+
+p +  annotate("point", x = legend_x, y = legend_y_total_trade, shape = 21, size = 12, fill = "dimgrey", colour = "dimgrey" ) +
+  annotate("text", x = legend_x + 1, y = legend_y_total_trade, label = "Total Trade         1 billion(US)", hjust = 0.52, vjust = 1.6, colour = "grey", size=3.7, fontface = "italic", family = "Arial" ) +
+  annotate("text", x = legend_x + 1, y = legend_y_exports, label = "Exports", hjust = 1.8, vjust = 1.2, colour = "#f2e901", size=3.7,fontface = "italic", family = "Arial") +
+  annotate("text", x = legend_x + 1, y = legend_y_imports, label = "Imports", hjust = 1.8, vjust = 0.8, colour = "#FF4843", size=3.7, fontface = "italic", family = "Arial") +
+  annotate("text", x = legend_x + 1, y = legend_y_imports, label = "Trade 2021", hjust = 1.16, vjust = -0.5, colour = "white", size=4.5, fontface = "bold", family = "Arial") +
+  theme_custom
+```
+```{r}
+bmi_node_2021 <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/bmi_node_2021_add.csv')
+bmi_edges_2021 <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/import_export_beef_edges5-2021.csv')
 ```
 
-## 2.1 Univariate Analysis on Choropleth (BMI (USD))
 
 ```{r}
+library(sf)
 library(ggplot2)
-library(sf)
-library(dplyr)
+library(ggforce) 
+library(maps) 
+library(geosphere)
 
-world_bmi2 <- worldnew %>% 
-  filter(admin != "Antarctica") %>%
-  st_transform(crs ="+proj=robin") %>%
-  ggplot() +
-  geom_sf(color = "grey") +  # Fixed by adding a '+' at the end of this line
-  geom_sf(data = world_bmi, aes(fill = bmi_usd_price)) +  # Removed quotes around bmi_usd_price
-  scale_fill_viridis_c() +  # Changed to a continuous color scale
-  theme_minimal() +
-  theme(plot.title = element_text(face = "bold"),
-        axis.text.x = element_blank(),
-        legend.position = "bottom") +  # Changed legend position to bottom
-  labs(title = "BMI Price (USD)",
-       subtitle = "Countries BMI Index at 2020",
-       x = NULL, y = NULL, caption = "Made by Firdaus")
+# Assuming 'bmi_node_2021' is your dataframe and it has columns 'LON' and 'LAT'
+# Make sure 'bmi_node_2021' is a data frame and 'LON' and 'LAT' are not factors
+bmi_node_2021 <- data.frame(bmi_node_2021)
+bmi_node_2021$LON <- as.numeric(as.character(bmi_node_2021$LON))
+bmi_node_2021$LAT <- as.numeric(as.character(bmi_node_2021$LAT))
 
-print(world_bmi2)
-```
-
-To have a sense of the BMI index over the selected countries over the years from 2002 to 2021. A plotly graph was plotted.
-
-```{r}
-fontStyle = list(
-  family = "DM Sans",
-  size = 15,
-  color = "black"
-)
-
-label = list(
-  bgcolor = "#EEEEEE",
-  bordercolor = "transparent",
-  font = fontStyle
-)
-```
-
-```{r}
-bmi_geo <- plot_ly(data = world_bmi, 
-                   locationmode= 'ISO-3', 
-                   frame = ~year) %>%
-  add_trace(locations = ~iso_a3,
-            z = ~bmi_usd_price,
-            zmin = 0,
-            zmax = 8,
-            type = 'choropleth',
-            text = ~name,
-            #("Country: ", name, "<br>"
-                                 #"BMI USD Price: $", sprintf("%.2f", bmi_usd_price), "<br>",
-                                 #"GDP per Capita: $", sprintf("%.2f", gdp_per_capita), "<br>",
-                                 #"Inflation: ", sprintf("%.2f%%", inflation)), 
-            colorscale = "Electric", 
-            color = ~bmi_usd_price) %>%
-  layout(geo = list(projection = list(type = 'natural earth'),
-          font = list(family = "DM Sans"),
-          title = 'Global Big Mac Index (USD Price) from 2002 to 2021')) %>%
-  style(hoverlabel = label) %>%
-  config (displayModeBar = FALSE) %>%
-  colorbar(tickprefix = "$")
-
-bmi_geo
+# Convert your data frame to an sf object
+node_sf <- st_as_sf(bmi_node_2021, coords = c("LON", "LAT"), crs = 4326)
+node_sf_projected <- st_transform(node_sf, st_crs(worldly_projected))
 
 
-```
+bmi_edges_2021$source_lon <- as.numeric(bmi_edges_2021$source_lon)
+bmi_edges_2021$source_lat <- as.numeric(bmi_edges_2021$source_lat)
+bmi_edges_2021$target_lon <- as.numeric(bmi_edges_2021$target_lon)
+bmi_edges_2021$target_lat <- as.numeric(bmi_edges_2021$target_lat)
 
-```{r}
-wmpb_World <- st_read("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/geospatial/TM_WORLD_BORDERS-0.3.shp")
-```
+col_world <- "#9CB4BF"
+col_back <- "#1D201F"
 
-```{r}
-wmpb_World_BMI <- wmpb_World %>% left_join(bmi_data_raw,
-                          by = c("NAME" = "country")) #altnative is name
-```
+# Set theme
+theme_custom <- theme_void()+
+  theme(plot.background = element_rect(fill=col_back,color=NA))
 
-```{r}
-library(dplyr)
+# Create a LINESTRING for each row in bmi_edges_2021
+edges_linestrings <- lapply(1:nrow(bmi_edges_2021), function(i) {
+  row <- bmi_edges_2021[i, ]
+  st_linestring(matrix(c(row$source_lon, row$source_lat, row$target_lon, row$target_lat), ncol = 2, byrow = TRUE))
+})
 
-wmpb_World_BMI_2020 <- wmpb_World_BMI %>%
-  filter(year == 2020) %>% 
-  group_by(NAME) %>%
-  #filter(
-    #any(!is.na(currency_code)) & 
-    #any(!is.na(bmi_localprice)) & 
-    #any(!is.na(bmi_usd_price)) & 
-    #any(!is.na(export_usd)) & 
-    #any(!is.na(import_usd)) & 
-    #any(!is.na(GDP)) & 
-    #any(!is.na(gdp_per_capita)) & 
-   # any(!is.na(inflation)) & 
-    #any(!is.na(year))
-  #) %>%
-  ungroup()
+# Convert the list of LINESTRINGs to an sf object
+edges_sf <- st_sfc(edges_linestrings, crs = 4326)
 
-```
+# Convert to a data frame structure for sf, if needed
+edges_sf_df <- st_sf(geometry = edges_sf)
 
-```{r}
-library(tmap)
+# Transform to the same CRS as the base map
+edges_sf_projected <- st_transform(edges_sf_df, st_crs(worldly_projected))
 
-world_bmi_2020 <- wmpb_World_BMI_2020 %>%
-  dplyr::select (geometry, NAME, ISO3) %>%
-  left_join(bmi_data_iso, by = c("ISO3" = "Iso3"))  %>%
-  filter(year == 2020) 
+
+
+col.1 <- adjustcolor("orangered", alpha=0.015)
+col.2 <- adjustcolor("yellow", alpha=0.015)
+edge.pal <- colorRampPalette(c(col.1, col.2), alpha = TRUE)
+
+# Assuming 'Weight' is normalized between 0 and 1 for color mapping
+max_weight <- max(bmi_edges_2021$Value, na.rm = TRUE)
+edge.col <- edge.pal(1000000)[round(1000000 * bmi_edges_2021$Value / max_weight)]
+
+# Generate arc data
+arc_data <- lapply(1:nrow(bmi_edges_2021), function(i) {
+  row <- bmi_edges_2021[i,]
+  arc <- gcIntermediate(
+    c(row$source_lon, row$source_lat),
+    c(row$target_lon, row$target_lat),
+    n=300, addStartEnd=TRUE, breakAtDateLine=F
+  )
+  data.frame(lon = arc[,1], lat = arc[,2], weight = row$Value, edge_col = edge.col[i])
+}) %>%
+  do.call(rbind, .)
+
+# Convert arc data to an sf object and project
+arc_sf <- st_as_sf(arc_data, coords = c("lon", "lat"), crs = 4326)
+arc_sf_projected <- st_transform(arc_sf, st_crs(worldly_projected))
+
+
+p <- ggplot(map) +
+  geom_sf(data = worldly_projected, fill = col_world, color = alpha("dimgrey", 0.25)) +
+  geom_sf(data = node_sf_projected, aes(geometry = geometry), color = "red", size = 1) + 
+  geom_sf(data = arc_sf_projected, aes(color = edge_col), size = 0.0001) +  # Assuming 'edge_col' is part of 'arc_sf_projected'
+  scale_color_identity() +
+
+  # Draw Dorling cartogram with geom_circle()
+  ggforce::geom_circle(
+    data = dorl2, aes(x0 = X, y0 = Y, r = rad),
+    fill=alpha("dimgrey",0.75),color=alpha("white",0.2)
+  )+
+  # Draw half circle for crop with geom_polygon
+  geom_polygon(
+    half_export,
+    mapping=aes(x,y,group=ISO3),
+    fill=col_export,color=NA
+  )+ 
+  # Draw half circle for grass with geom_polygon
+  geom_polygon(
+    half_import,
+    mapping=aes(x,y,group=ISO3),
+    fill=col_import,color=NA
+  )+ 
+  theme_custom
+
+x_range <- range(dorl2$X, na.rm = TRUE)
+y_range <- range(dorl2$Y, na.rm = TRUE)
+# Calculate positions for legend items based on the range
+legend_x <- x_range[1] * 1.20 # Place legend slightly to the right of the X range minimum
+legend_y_total_trade <- y_range[1] * 1.15 # Start legend slightly above the Y range minimum
+legend_y_exports <- legend_y_total_trade + abs(y_range[2] - y_range[1]) * 0.05 # 5% above total trade
+legend_y_imports <- legend_y_exports + abs(y_range[2] - y_range[1]) * 0.05
+
+p + annotate("point", x = legend_x, y = legend_y_total_trade, shape = 21, size = 8, fill = "dimgrey", colour = "dimgrey" ) +
+  annotate("text", x = legend_x + 1, y = legend_y_total_trade, label = "Total Trade     1 billion(US)", hjust = 0.52, vjust = 1.6, colour = "grey", size=3.5, fontface = "italic", family = "Arial" ) + 
+  annotate("text", x = legend_x + 1, y = legend_y_total_trade, label = "Beef Trade --", hjust = 1.07, vjust = 2.9, colour = "orangered", size=3.5, fontface = "italic", family = "Arial" ) +
+  annotate("text", x = legend_x + 1, y = legend_y_exports, label = "Exports", hjust = 1.8, vjust = 1.2, colour = "#f2e901", size=3.5,fontface = "italic", family = "Arial") +
+  annotate("text", x = legend_x + 1, y = legend_y_imports, label = "Imports", hjust = 1.8, vjust = 0.8, colour = "#FF4843", size=3.5, fontface = "italic", family = "Arial") +
+  annotate("text", x = legend_x + 1, y = legend_y_imports, label = "Trade Network 2021", hjust = 0.58, vjust = -0.4, colour = "white", size=4.3, fontface = "italic", family = "Arial") +
   
-world_bmi_2020 <- world_bmi_2020 %>%
-  mutate(geometry = st_make_valid(geometry))
-
-# Ensure tmap is in view mode for interactive visualization
-tmap_mode("view")
-
-tm <- tm_shape(world_bmi_2020) +
-  tm_polygons("bmi_usd_price", id = "country", popup.vars = c("Big Mac Index(USD)" = "bmi_usd_price", 
-                                                       "Inflation" = "inflation", 
-                                                       "GDP per Capita" = "gdp_per_capita",
-                                                       "Export" = "export_usd",
-                                                       "Import" = "import_usd"),
-            popup.format = list(export_usd= list(digits = 1),import_usd= list(digits = 1), gdp_per_capita = list(digits = 0), inflation = list(digits = 1)
-  )) +
-  tm_layout()
-
-tm
+theme_custom
 ```
 
-```{r}
-#tm_shape(wmpb_World_BMI_2020) +
-  #tm_fill("bmi_usd_price",
-          #style = "quantile",
-          #palette = "Blues",
-          #thres.poly = 0) + 
- # tm_facets(by="income_grp", 
-            #free.coords=TRUE, 
-            #drop.shapes=FALSE) +
-  #tm_layout(legend.show = FALSE,
-            #title.position = c("center", "right"), 
-            #title.size = 20) +
-  #tm_borders(alpha = 0.5)
-```
 
-### 2.1.1 Geo Percentile of BMI
+# 3 Visualising the Network: Exploratory Data Analysis
+
+Emphasis here is to give them the option to play with the nodes, layout and geom_edge functions.
 
 ```{r}
-library(sf)
-
-invalid_geometries <- !st_is_valid(wmpb_World_BMI_2020)
-
-sum(invalid_geometries)
-
-wmpb_World_BMI_2020[invalid_geometries, ] <- st_make_valid(wmpb_World_BMI_2020[invalid_geometries, ])
-
-all(st_is_valid(wmpb_World_BMI_2020))
-var <- wmpb_World_BMI_2020$bmi_usd_price
-  
-percent <- c(0,.01,.1,.5,.9,.99,1)
-quantiles <- quantile(var,percent)
-print(quantiles)
-```
-
-```{r}
-get.var <- function(var_name, wmpb_World_BMI_2020) {
-  # Assuming 'var_name' is a string representing the variable name to extract
-  v <- wmpb_World_BMI[[var_name]] %>% 
-    as.numeric()
-  return(v)
-}
-```
-
-```{r}
-library(tmap)
-tmap_mode("view")
-tmap_options(legend.width = 0.25) # Adjusts the width of the legend area
-
-# Define the function
-percentmap <- function(var_name, wmpb_World_BMI_2020, legtitle=NA, mtitle="Percentile Map") {
-  percent <- c(0, .01, .1, .5, .9, .99, 1)
-  var <- get.var(var_name, wmpb_World_BMI_2020)
-  bperc <- quantile(var, percent, na.rm = TRUE)
-  
-  tm_shape(wmpb_World_BMI_2020) +
-    tm_fill(var_name,
-            title = legtitle,
-            breaks = bperc,
-            palette = "Greens",
-            legend.hist = TRUE) +
-    tm_borders(col = "black") +
-    tm_layout(main.title = mtitle, 
-              main.title.position = "center",
-              legend.position = c("left", "bottom")) -> tm
-  
-  print(tm)
-}
-
-percentmap("bmi_usd_price", wmpb_World_BMI_2020, legtitle = "Percentile", mtitle = "BMI USD($) Percentile Map")
-
-```
-
-### 2.1.2 Building a Boxmap
-
-*Distribution Overview:* The boxbreaks function calculates the interquartile range (IQR) of the bmi_usd_price variable to determine the "fences" or thresholds for outliers. It then establishes break points for categorizing regions: lower outliers, the first quartile (25%), the median (50%), the third quartile (75%), and upper outliers. This approach provides a quick way to identify where the majority of the data points lie in relation to the overall distribution and to spot regions with exceptionally high or low BMI prices.
-
-*Geographic Variations:* By applying the boxmap function, we visually analyze the geographic distribution of Big Mac prices across different countries. This analysis can reveal patterns or clusters of higher or lower prices. For instance, higher prices in developed countries could reflect stronger currencies or higher living costs, while lower prices in developing countries might be attributed to lower production costs or weaker currencies.
-
-*Outliers and Economic Insights:* Outliers identified through this method can offer insights into anomalies within the data. Lower outliers might indicate countries where Big Macs are unusually cheap, potentially due to lower labor and production costs or subsidy effects. Conversely, upper outliers might point to countries where Big Macs are disproportionately expensive, which could be due to import tariffs, high taxes, or significant demand relative to supply. Identifying these outliers can prompt further investigation into the economic policies, supply chain logistics, and market dynamics of these regions.
-
-```{r}
-boxbreaks <- function(v,mult=1.5) {
-  qv <- unname(quantile(v))
-  iqr <- qv[3] - qv[1]
-  upfence <- qv[3] + mult * iqr
-  lofence <- qv[1] - mult * iqr
-  # initialize break points vector
-  bb <- vector(mode="numeric",length=6)
-  # logic for lower and upper fences
-  if (lofence < qv[1]) {  # no lower outliers
-    bb[1] <- lofence
-    bb[2] <- floor(qv[1])
-  } else {
-    bb[2] <- lofence
-    bb[1] <- qv[1]
-  }
-  if (upfence > qv[4]) { # no upper outliers
-    bb[6] <- upfence
-    bb[5] <- ceiling(qv[4])
-  } else {
-    bb[5] <- upfence
-    bb[6] <- qv[4]
-  }
-  bb <- sort(bb)
-  bb[2:4] <- qv[1:3]
-  return(bb)
-}
-```
-
-```{r}
-get.var <- function(vname,df) {
-  v <- df[vname] %>% st_set_geometry(NULL)
-  v <- unname(v[,1])
-  return(v)
-}
-```
-
-```{r}
-get.var <- function(vname, df) {
-
-  v <- df[[vname]] %>% as.numeric() 
-  return(v)
-}
-library(sf)  # Assuming you're working with sf objects
-library(dplyr)  # For the pipe operator
-
-var <- na.omit(get.var("bmi_usd_price", wmpb_World_BMI))
-bb <- boxbreaks(var)
-print(bb)
-```
-
-```{r}
-boxmap <- function(vnam, df, 
-                   legtitle=NA,
-                   mtitle="Box Map",
-                   mult=1.5){
-  var <- get.var(vnam,df)
-  bb <- boxbreaks(var)
-  tm_shape(df) +
-    tm_polygons() +
-  tm_shape(df) +
-     tm_fill(vnam,title=legtitle,
-             breaks=bb,
-             palette="Oranges",
-          labels = c("lower outlier", 
-                     "< 25%", 
-                     "25% - 50%", 
-                     "50% - 75%",
-                     "> 75%", 
-                     "upper outlier"))  +
-  tm_borders() +
-  tm_layout(main.title = mtitle, 
-            title.position = c("left",
-                               "top"))
-}
-```
-
-```{r}
-tmap_mode("view")
-boxmap("bmi_usd_price", wmpb_World_BMI_2020)+
-  tm_facets(by="continent", 
-            free.coords=TRUE, 
-            drop.shapes=FALSE) 
-```
-
-*Comparison by Continent:* The use of tm_facets to segment the map by continent allows for an examination of regional trends and comparisons. It can uncover how economic, cultural, and regional trade agreements influence the price of consumer goods like Big Macs. For example: - North America although USA and Canada are top 50 percentile, Mexico is lagging behind the big mac's indicator. - Most of the EU countries are also in the 50 - 75% and above as compare to majority of Asia which still sits at \<25% percentile especially in the South East Asia Region.
-
-*Statistical Significance:* While this visual method offers valuable insights, it's also crucial to conduct further statistical tests to determine the significance of the observed patterns. For instance, analyses such as ANOVA or post-hoc tests can quantify whether the differences in Big Mac prices between continents or between outlier and non-outlier countries are statistically significant.
-
-## 2.2 Treemap Multi Variate Analysis
-
-The treemap provides a hierarchical view of data and is particularly effective for showcasing proportional relationships using nested rectangles.
-
-```{r}
-# First, ensure that "Seven seas (open ocean)" rows are removed.
-wmpb_World_BMI_2020 <- wmpb_World_BMI_2020[wmpb_World_BMI_2020$continent != "Seven seas (open ocean)", ]
-library(viridis)
-library(dplyr)
-
-# Extract non-spatial data
-non_spatial_data <- as.data.frame(wmpb_World_BMI_2020)
-
-# Perform your filtering and factor level dropping
-cleaned_data <- non_spatial_data %>%
-  filter(continent != "Seven seas (open ocean)") %>%
-  droplevels()
-
-library(treemap)
-
-treemap(cleaned_data,
-        index = c("continent", "NAME"),
-        vSize = "bmi_usd_price",
-        vColor = "gdp_per_capita",
-        type = "manual",
-        palette="Blues",
-        title = "BMI (USD) by Continent and GDP per Capita, 2020",
-        title.legend = "Big Mac Index ($USD)"
-)
-
-```
-
-This treemap is a visual between countries' GDP per capita and Big Mac Index (BMI) prices in USD for 2020, highlighting economic disparities across continents. In Europe, the dark shades of affluent countries like Switzerland juxtapose with the lighter hues of Eastern nations, indicating a higher BMI aligned with greater wealth. Asia's patchwork reflects stark differences in economic development, while North America's uniform darkness suggests higher living costs in line with its economic status. Oceania and South America reveal variations in the cost of living, as seen through the diverse shades representing the BMI, suggesting distinct economic structures and market dynamics within these regions. This treemap serves as a succinct graphical summary of the intersection between a country's economic health and the relative cost of a globally recognized product.
-
-```{r}
-
-# Perform your filtering and factor level dropping
-cleaned_data <- non_spatial_data %>%
-  filter(continent != "Seven seas (open ocean)") %>%
-  droplevels()
-
-library(treemap)
-library(gridExtra)
-
-# Generate the treemap plots
-p1 <- treemap(cleaned_data,
-        index = c("continent", "NAME"),
-        vSize = "export_usd",
-        vColor = "gdp_per_capita",
-        type = "value",
-        title = "Exports by Continent and GDP per Capita, 2020",
-        title.legend = "GDP per Capita"
-)
-p1
-```
-
-The treemap above provides a hierarchical view of data and is particularly effective for showcasing proportional relationships using nested rectangles. We can observe that Asian economies such as China and Japan occupy large areas, indicating a high GDP per capita combined with significant exports. Contrastingly, the smaller rectangles representing countries like the Philippines and Malaysia suggest lower GDP per capita figures. Additionally, the treemap highlights the prominence of North America, particularly the United States, which dominates the visual space reflecting its substantial GDP per capita and export volume. Europe's diverse economic status is represented through varying rectangle sizes, with countries like the United Kingdom and Switzerland appearing significantly larger than their eastern counterparts, denoting higher GDP per capita ratios. This visualization is a graphical abstract of the global economic hierarchy and the interplay between GDP and exports in different regions. Similar observations can be made to the treemap below.
-
-```{r}
-p2 <- treemap(cleaned_data,
-        index = c("continent", "NAME"),
-        vSize = "import_usd",
-        vColor = "gdp_per_capita",
-        type = "value",
-          title = "Imports by Continent and GDP per Capita, 2020",
-        title.legend = "GDP per Capita"  
-)
-
-p2
-
-```
-
-# 3.1 Extracting centroids and the edges(link)
-
-This analysis delves into global trade by mapping countries' trade networks with beef, directly linked to the Big Mac patty's economic footprint. By aligning the Big Mac Index with actual trade flows, symbolized by each country's ISO3 geocodes, we aim to clarify the economic forces shaping this iconic index, offering a pragmatic view of the global marketplace.
-
-```{r}
-#install.packages("tidygraph")
 library(tidygraph)
 library(igraph)
 library(ggplot2)
 library(ggraph)
-
-# Load the datasets
-import_export_beef <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/import_export_beef_v2.csv')
-bmi_data <- read.csv('data/bmi_data.csv')
-
-# Preview the datasets
-head(import_export_beef)
-head(bmi_data)
 ```
+
 
 ```{r}
-library(sf)
-
-world_borders <- st_read("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/geospatial/TM_WORLD_BORDERS-0.3.shp")
+bmi2021_graph <- tbl_graph(nodes = bmi_node_2021,
+                           edges = bmi_edges_2021, 
+                            directed = TRUE)
 ```
 
-# 
 
 ```{r}
-library(dplyr)
-library(igraph)
+#|warning = FALSE
+#|echo=FALSE
+g <- ggraph(bmi2021_graph, layout = "sugiyama", circular = TRUE) +
+  geom_edge_arc(aes(color = Trade, width = Value), alpha = 0.6) + 
+  scale_edge_color_manual(values = c("Import Quantity" = "#00CCB0", "Export Quantity" = "#FF6ABE")) +
+  scale_edge_width(range = c(0.2, 2)) +
+  geom_node_point(aes(colour = continent), size = 2.5, shape=20) +
+  geom_node_text(aes(label = country), repel = TRUE, size = 2, hjust = 0.6, vjust = -1.8, color = "white") +
+  theme_graph() +
+  guides(color = guide_legend(title = "Type"),
+         size = "none", 
+         edge_alpha = "none", 
+         edge_width = guide_legend(override.aes = list(color = "white"))) + # Ensure this line is correctly formatted
+  coord_fixed() +
+  theme_graph(background = '#1D201F', text_colour = 'white')
 
-# Assuming 'country_name' is the common key and 'ISO3' is the column you want to join from 'world_bmi' to 'import_export_beef'
-import_export_beef_enriched <- import_export_beef %>%
-  left_join(world_bmi, by = "country") %>% 
-  select(-matches("^world_bmi"))  # Remove duplicated columns if needed
-
-# Filter the dataset for a specific year
-year_2021_trade <- import_export_beef_enriched %>%
- filter(Year == 2021) #!is.na(country)) #!is.na(Partner))  # Adjust the year as needed
-
-#Create an igraph object from the filtered data
-trade_network <- graph_from_data_frame(d = year_2021_trade, directed = TRUE)
-```
-
-# 
-
-```{r}
-library(sf)
-
-# Assuming 'world_borders' is already loaded with st_read()
-
-# Correct geometry issues
-world_borders_valid <- st_make_valid(world_borders)
-
-# Calculate centroids for corrected geometries
-world_centroids <- st_centroid(world_borders_valid)
-
-# Extract latitude and longitude
-world_centroids <- world_centroids %>% 
-  mutate(longitude = st_coordinates(.)[, 1],
-         latitude = st_coordinates(.)[, 2])
-```
-
-```{r}
-# Select necessary columns (assuming ISO3 is used as the identifier)
-geo_data <- world_centroids %>% 
-  select(ISO3, latitude, longitude)
-
+g
 
 ```
 
-```{r}
-library(dplyr)
-
-# Loop through each node by index
-for(i in seq_along(V(trade_network)$name)) {
-  # Find the corresponding ISO3 code for each node based on 'country'
-  node_name <- V(trade_network)$name[i]
-  iso_code <- import_export_beef_enriched %>%
-    filter(country == node_name) %>%
-    pull(ISO3) %>%
-    unique()  # Ensuring unique ISO3 code is selected in case of multiple matches
-  
-  #Check if ISO3 code is found and assign it
-  if(length(iso_code) == 1) {
-   V(trade_network)$ISO3[i] <- iso_code
-  } else {
-   V(trade_network)$ISO3[i] <- NA  # Assign NA if no matching ISO3 code is found
-  }
-}
-
-```
-
-```{r}
-# Assuming your igraph object 'trade_network' has node names that match country codes
-network_nodes <- data.frame(
-  name = V(trade_network)$name,
-  ISO3 = V(trade_network)$ISO3)
-```
-
-```{r}
-# Merge latitude and longitude with network nodes
-network_nodes_geo <- merge(network_nodes, geo_data, by = "ISO3")
-
-```
-
-```{r}
-# Assuming 'network_nodes_geo' contains 'ISO3', 'latitude', and 'longitude'
-# and 'edges_df' has 'from' and 'to' as ISO3 codes
-edges_df <- get.data.frame(trade_network, what = "edges")
-# Ensure ISO3 codes are used in edges_df (if necessary, adjust this step based on your data)
-edges_df$from <- V(trade_network)$ISO3[match(edges_df$from, V(trade_network)$name)]
-edges_df$to <- V(trade_network)$ISO3[match(edges_df$to, V(trade_network)$name)]
-
-# Merge geographic coordinates for both 'from' and 'to'
-edges_geo <- edges_df %>%
-  left_join(network_nodes_geo, by = c("from" = "ISO3")) %>%
-  rename(from_lat = latitude, from_long = longitude) %>%
-  left_join(network_nodes_geo, by = c("to" = "ISO3")) %>%
-  rename(to_lat = latitude, to_long = longitude)
-
-
-
-```
-
-# 3.2 Trade Network of beef imports and exports
-
-```{r}
-library(ggplot2)
-
-edges_geo <- edges_geo %>%
-  mutate(alpha = ifelse(Trade == "Export Quantity", 0.5, 0.5)) 
-
-ggplot() + 
-  geom_sf(data = worldnew , fill = "#1A1A59", color = "#8080B3", line = "#8080B3") + 
-  geom_segment(data = edges_geo, aes(x = from_long, y = from_lat, xend = to_long, yend = to_lat, color = Trade), size = 0.001, alpha = 0.05) + 
-  scale_color_manual(values = c("Import Quantity" = "#53C9CF", "Export Quantity" = "#FF6ABE")) +
-  geom_point(data = network_nodes_geo, aes(x = longitude, y = latitude), color = "orange", size = 1) +
-  theme_dark()
-```
-
-In the visual representation of the trade network provided, each node (depicted as a point) signifies a country identified by its ISO3 geocode. The position of each node corresponds to the geographic coordinates (longitude and latitude) of the country’s centroid, anchoring the network in real-world geography.
-
-The links, or edges, illustrate the trade relationships between countries. Their thickness represents the trade volume or weight—thicker edges indicate a larger volume of trade. In this context, these volumes reflect the import and export of beef, which serves as a granular proxy for the Big Mac Index's core component, the beef patty.
-
-```{r}
-# Assuming 'edges_geo' has 'from', 'to', 'Element', and 'Value' columns where 'Value' is the trade volume
-exports <- edges_geo %>% 
-  filter(Trade == "Export Quantity") %>%
-  group_by(from) %>%
-  summarise(Total_Export = sum(Value))
-
-imports <- edges_geo %>%
-  filter(Trade == "Import Quantity") %>%
-  group_by(to) %>%
-  summarise(Total_Import = sum(Value))
-
-# Merge exports and imports and calculate net export
-net_exports <- merge(exports, imports, by.x = "from", by.y = "to", all = TRUE) %>%
-  mutate(Total_Export = ifelse(is.na(Total_Export), 0, Total_Export),
-         Total_Import = ifelse(is.na(Total_Import), 0, Total_Import),
-         Net_Export = Total_Export - Total_Import) %>%
-  select(from, Net_Export)
-
-# Rename 'from' to 'ISO3' for joining
-colnames(net_exports)[1] <- "ISO3"
-
-```
-
-```{r}
-network_nodes_geo_exports <- network_nodes_geo %>%
-  left_join(net_exports, by = "ISO3") %>%
-  mutate(Size = ifelse(is.na(Net_Export), 2, sqrt(abs(Net_Export))))  # Adjust the size calculation as needed
-
-```
-
-```{r}
-ggplot() + 
-  geom_sf(data = worldnew , fill = "#140A29", color = "#8080B3", line = "#8080B3") + 
-  geom_point(data = network_nodes_geo_exports, aes(x = longitude, y = latitude, size = Size), color = "red", alpha = 0.3) +
-  geom_segment(data = edges_geo, aes(x = from_long, y = from_lat, xend = to_long, yend = to_lat, color = Trade), 
-               size = 0.5, alpha = 0.01) + 
-  scale_color_manual(values = c("Import Quantity" = "#53C9CF", "Export Quantity" = "#FF8900")) +
-  theme_dark() +
-  guides(size = FALSE, color = guide_legend(override.aes = list(size = 2, alpha = 2))) +  
-  labs(color = "Exports | Imports (Beef) ") 
-```
-
-By mapping these trade flows onto a geospatial framework, we can interpret the complex web of global beef trade and its influence on the Big Mac Index. This intersection of geography and trade data provides a multifaceted view of the index, factoring in both the economic activity (trade volumes as edge weights) and the spatial distribution of this activity (node placement and connections on the map).
-
-Ultimately, this network offers insights into the global dynamics of beef trade, highlighting which countries are central players (high degree of centrality) and which hold strategic positions in trade routes (high betweenness centrality), all of which can influence the localized price of a Big Mac.
-
-```{r}
-# Determine the range for the sizes in the plot
-min_size <- 3
-max_size <- 25
-
-size_range <- range(network_nodes_geo_exports$Size, na.rm = TRUE)
-
-scaling_factor <- (max_size - min_size) / (size_range[2] - size_range[1])
-
-scaled_size <- (network_nodes_geo_exports$Size - size_range[1]) * scaling_factor + min_size
-
-```
-
-```{r}
-library(plotly)
-
-network_nodes_geo_exports$hover_text <- paste(
-  "Country: ", network_nodes_geo_exports$name,
-  sep = ""
-)
-
-# Create the base map with interactive nodes
-p <- plot_geo(worldnew, locationmode = 'ISO-3') %>%
-  add_trace(
-    type = 'scattergeo',
-    locations = network_nodes_geo_exports$ISO3,
-    text = network_nodes_geo_exports$hover_text,  # Use the hover text for nodes
-    hoverinfo = 'text',
-    mode = 'markers',
-    marker = list(
-      size = scaled_size,  
-      color = 'yellow',
-      opacity = 0.3
-    )
-  )
-
-# Overlay the trade lines (make them static)
-p <- p %>%
-  add_segments(
-    x = ~edges_geo$from_long,
-    y = ~edges_geo$from_lat,
-    xend = ~edges_geo$to_long,
-    yend = ~edges_geo$to_lat,
-    hoverinfo = 'none',
-    line = list(
-      color = ~ifelse(edges_geo$Element == "Export Quantity", "#FFA054", "#33C9CF"),
-      width = 0.007,
-      alpha = 0.2
-    )
-  )
-
-# Customize the layout
-p <- p %>%
-  layout(
-    title = 'World Trade Network (Interactive Nodes)',
-    geo = list(
-      showland = TRUE,
-      landcolor = toRGB("#140A29"),
-      countrycolor = toRGB("#8080B3"),
-      coastlinecolor = toRGB("#8080B3"),
-      projection = list(type = 'natural earth')
-    ),
-    legend = list(orientation = 'h')
-  )
-
-# Display the plot
-p
-```
-
-# 4 Cluster Analysis for Trade
-
-In our exploration of global trade dynamics, specifically through the lens of beef exports and imports, we aim to uncover insights into the Big Mac Index, a whimsical gauge of purchasing power parity devised by The Economist. Analyzing beef trade patterns grants us a direct line of inquiry into the pricing mechanisms of the Big Mac, considering beef's pivotal role in its composition. This focus allows us to parse the supply chain intricacies and market conditions that dictate the variability in Big Mac prices across different regions. The rationale behind this targeted analysis is to use beef trade as a tangible metric for understanding broader economic trends and pricing pressures that ultimately influence consumer goods' costs.
-
-To navigate this complex interplay, we've adopted a formula integrating critical trade data and economic indicators to model their relationship with the Big Mac Index. This formula captures the essence of trade balance, economic scale (granular and macro at the same time), and the specific impact of beef trade. It correlates net exports relative to GDP per capita with the proportions of beef exports and imports within total trade, providing a nuanced perspective on how trade dynamics influence market conditions and, by extension, Big Mac prices.
-
-Importing data
-
-Loading packages and data
-
-```{r}
-#install.packages("tidygraph")
-library(tidygraph)
-library(igraph)
-library(ggplot2)
-library(ggraph)
-
-# Load the datasets
-import_export_beef <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/import_export_beef_v5.csv')
-bmi_data <- read.csv('data/bmi_data.csv')
-
-
-```
-
-The analysis conducted pertains to the year 2021, chosen deliberately for its recency and relevance to current market conditions. The selection of this year is particularly pertinent because trade networks and economic landscapes evolve rapidly, influenced by policy changes, market developments, and global events. By focusing on 2021, we ensure that our findings and interpretations reflect the most up-to-date representation of trade patterns and their implications for the Big Mac Index.
-
-## 4.1 Visualising the Network: Exploratory Data Analysis
-
-```{r}
-library(dplyr)
-library(igraph)
-
-# Assuming 'country_name' is the common key and 'ISO3' is the column you want to join from 'world_bmi' to 'import_export_beef'
-import_export_beef_enriched <- import_export_beef %>%
-  left_join(world_bmi, by = "country") %>% 
-  select(-matches("^world_bmi"))  # Remove duplicated columns if needed
-
-# Filter the dataset for a specific year
-year_2021_trade <- import_export_beef_enriched %>%
- filter(Year == 2021) #!is.na(country)) #!is.na(Partner))  # Adjust the year as needed
-
-#Create an igraph object from the filtered data
-trade_network_2021 <- graph_from_data_frame(d = year_2021_trade, directed = TRUE)
-
-```
-
-## 4.1.1 Visualising Trade (Beef) 2021
-
-We will first study the trade connectivity patterns of beef at present, 2021.
-
-```{r}
-library(ggraph)
-
-# Visualize the network
-ggraph(trade_network_2021, layout = "graphopt") + 
-  geom_edge_link(aes(color = Trade, edge_WIDTH = Value), alpha = 0.05) + # Use 'element' for color
-  scale_edge_color_manual(values = c("Import Quantity" = "#00CCB0", "Export Quantity" = "#FF6ABE")) + # Customize colors
-  geom_node_point(color='red', size = 1) +
-  geom_node_text(aes(label = name), repel = FALSE, size = 2, color = "white") + 
-  theme_minimal() +
-  ggtitle("Beef Imports | Exports Network 2021") +
-  theme_graph(background = 'grey10',
-                text_colour = 'white')
-
-```
-
-It can be observed that the edges / links in the cluster are tight knitted together, with the exception of Tanzania. This visualisation shows:
-
--   **Geographical Distribution**: The network is globally distributed, with countries from various continents engaged in trade. However, it's still dense in certain areas, indicating regional trading hubs or areas with more intensive trade relations.
-
--   **Trade Dependencies**: The visualization highlights the interconnectedness of the global beef market and may reflect dependencies. For example, a disruption in one node could have cascading effects throughout the network.
-
--   **Trade Intensity**: The number of lines and their density in the center of the plot suggest a high level of trade activity. Certain countries appear to be key nodes with many connections, signifying their importance in global beef trade.
-
--   **Trade Patterns**: The visualization suggests that beef trade is not isolated within regions; there are transcontinental trade flows that highlight the global nature of the beef market.
-
-Another method of visualisation using `arc` and `sugiyama` layout.
-
-```{r}
-library(ggraph)
-
-ggraph(trade_network, layout = "sugiyama") + 
-  geom_edge_arc(aes(color = Trade, edge_WIDTH = Value), alpha = 0.1) + # Use 'element' for color
-  scale_edge_color_manual(values = c("Import Quantity" = "#00CCB0", "Export Quantity" = "#FF6ABE")) + # Customize colors
-  geom_node_point(color = "red", size = 1) +
-  geom_node_text(aes(label = name), repel = TRUE, size = 2, angle= 90, hjust = 2, color = "white") + 
-  theme_minimal() +
-  ggtitle("Beef Imports | Exports Network 2021") + coord_fixed() +
-  theme_graph(background = 'grey10',
-                text_colour = 'grey')
-```
-
-Utilising different type of layouts can give other observable insights. Such as:
-
--   **Potential Clusters**: While not explicitly shown, there might be clusters within this network. These could represent trade blocs or regions that primarily trade among themselves due to geographical proximity, historical ties, or economic agreements.
-
--   **Central Nodes**: Certain nodes (countries) have a higher degree of connections, indicated by more lines converging on them. These nodes may be pivotal in the beef trade network, acting as major exporters or importers.
-
--   **Trade Volume and Direction**: The thickness of the lines could indicate the volume of trade, with thicker lines representing larger quantities of beef traded. Pink lines for exports are prominent, suggesting that the visualization might be from a major beef-exporting nation's perspective, or these countries are simply key players in beef exports globally.
-
-## 4.1.2 Visualising Trade (Beef) 2002
-
-```{r}
-library(dplyr)
-library(igraph)
-
-# Assuming 'country_name' is the common key and 'ISO3' is the column you want to join from 'world_bmi' to 'import_export_beef'
-import_export_beef_enriched <- import_export_beef %>%
-  left_join(world_bmi, by = "country") %>% 
-  select(-matches("^world_bmi"))  # Remove duplicated columns if needed
-
-# Filter the dataset for a specific year
-year_2021_trade <- import_export_beef_enriched %>%
- filter(Year == 2002) #!is.na(country)) #!is.na(Partner))  # Adjust the year as needed
-
-#Create an igraph object from the filtered data
-trade_network_2002 <- graph_from_data_frame(d = year_2021_trade, directed = TRUE)
-```
-
-```{r}
-ggraph(trade_network_2002, layout = "graphopt") + 
-  geom_edge_link(aes(color = Trade, edge_WIDTH = Value), alpha = 0.05) + # Use 'element' for color
-  scale_edge_color_manual(values = c("Import Quantity" = "#00CCB0", "Export Quantity" = "#FF6ABE")) + # Customize colors
-  geom_node_point(color='red', size = 1) +
-  geom_node_text(aes(label = name), repel = FALSE, size = 2, color = "white") + 
-  theme_minimal() +
-  ggtitle("Beef Imports | Exports Network 2002") +
-  theme_graph(background = 'grey10',
-                text_colour = 'white')
-
-```
-
-```{r}
-library(ggraph)
-
-p1 <- ggraph(trade_network_2021, layout = "graphopt") + 
-  geom_edge_link(aes(color = Trade, width = Value), alpha = 0.05) +
-  scale_edge_color_manual(values = c("Import Quantity" = "#00CCB0", "Export Quantity" = "#FF6ABE"), guide = FALSE) +
-  geom_node_point(color='red', size = 1) +
-  geom_node_text(aes(label = name), repel = FALSE, size = 2, color = "white") + 
-  theme_void() +
-  ggtitle("2021") +
-  theme_graph(background = 'grey10',
-                text_colour = 'white') +
-   guides(color = FALSE, size = FALSE, edge_width = FALSE)
-
-
-p2 <- ggraph(trade_network_2002, layout = "graphopt") + 
-  geom_edge_link(aes(color = Trade, width = Value), alpha = 0.05) + 
-  scale_edge_color_manual(values = c("Import Quantity" = "#00CCB0", "Export Quantity" = "#FF6ABE"), guide = FALSE) + 
-  geom_node_point(color='red', size = 1) +
-  geom_node_text(aes(label = name), repel = FALSE, size = 2, color = "white") + 
-  theme_void() +
-  ggtitle("2002") +
-  theme_graph(background = 'grey10',
-                text_colour = 'white') +
-  guides(color = FALSE, size = FALSE, edge_width = FALSE)
-
-```
-
-```{r}
-library(patchwork)
-
-# Combine the plots side by side
-combined_plot <- p1 + p2
-combined_plot
-```
-
-Side by side comparison of trade network patterns for 2021 and 2002.
-
-::: callout:insights
-1.  **Density and Complexity of Trade**: The network for 2021 appears denser and more complex, with more interconnections between countries. This suggests an increase in the global beef trade over the 19-year span. More countries seem to be involved in the trade network, indicating globalization and the diversification of trade partners.
-
-2.  **Centrality and Key Players**: Certain countries appear as central nodes in both networks, likely indicating that they are key players in the beef trade. The positioning of these countries may suggest their role as major exporters or importers. Over time, the central nodes might have shifted, reflecting changes in trade dominance.
-
-3.  **Changes in Trade Patterns**: By comparing the thickness and number of links (representing the volume of trade), it's possible to infer changes in trade patterns. Countries that have a larger number of thicker lines in 2021 compared to 2002 could have increased their beef trade volume significantly.
-
-4.  **Reduced Peripherality**: In the earlier network, there might be countries that appear as outliers or peripheral nodes, engaged in trade with only a few partners. Over time, these peripheral countries seem to have woven into the fabric of the global trade network more completely, with an increase in the number of trade links.
-
-5.  **Effects of Globalization**: The network's densification is likely a result of globalization. As trade barriers have been reduced and markets have opened up, countries have broadened their trade partnerships, leading to more robust and complex trade networks.
-:::
-
-## 4.2 Network Centrality and Community Clustering
+## 3.1 Network Centrality and Community Clustering
 
 For our scope of the project, we will select 50+ countries with (1) significant trade activities and (2) complete data together with BMI(Index). A *Trade Connectivity Index (TCI)* will be calculated for each edge in the network will be calculated as follows:
 
@@ -915,50 +425,11 @@ For the nodes, you can maintain attributes that reflect each country's economic 
 
 We will compute the centrality and community clusters to determine their community clusters
 
-```{r}
-bmi_node_2021 <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/bmi_node_2021_add.csv')
-bmi_edges_2021 <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/import_export_beef_edges5-2021.csv')
-```
+In our exploration of global trade dynamics, specifically through the lens of beef exports and imports, we aim to uncover insights into the Big Mac Index, a whimsical gauge of purchasing power parity devised by The Economist. Analyzing beef trade patterns grants us a direct line of inquiry into the pricing mechanisms of the Big Mac, considering beef's pivotal role in its composition. This focus allows us to parse the supply chain intricacies and market conditions that dictate the variability in Big Mac prices across different regions. The rationale behind this targeted analysis is to use beef trade as a tangible metric for understanding broader economic trends and pricing pressures that ultimately influence consumer goods' costs.
 
-```{r}
-#bmi_edges_2021 <- na.omit(bmi_edges_2021)
-#bmi_node_2021 <- bmi_node_2021 %>%
-  #mutate(id = as.character(id))
-#bmi_edges_2021 <- bmi_edges_2021 %>%
-  #mutate(country = as.character(country),
-         #Partner = as.character(Partner))
+To navigate this complex interplay, we've adopted a formula integrating critical trade data and economic indicators to model their relationship with the Big Mac Index. This formula captures the essence of trade balance, economic scale (granular and macro at the same time), and the specific impact of beef trade. It correlates net exports relative to GDP per capita with the proportions of beef exports and imports within total trade, providing a nuanced perspective on how trade dynamics influence market conditions and, by extension, Big Mac prices.
 
-
-```
-
-```{r}
-bmi2021_graph <- tbl_graph(nodes = bmi_node_2021,
-                           edges = bmi_edges_2021, 
-                            directed = TRUE)
-```
-
-
-```{r}
-g <- ggraph(bmi2021_graph, layout = "sugiyama", circular = TRUE) +
-  geom_edge_arc(aes(color = Trade, width = Value), alpha = 0.6) + 
-  scale_edge_color_manual(values = c("Import Quantity" = "#00CCB0", "Export Quantity" = "#FF6ABE")) +
-  scale_edge_width(range = c(0.2, 2)) +
-  geom_node_point(aes(colour = continent), size = 2.5) +
-  geom_node_text(aes(label = country), repel = TRUE, size = 2, hjust = 0.6, vjust = -1.8, color = "white") +
-  theme_graph() +
-  guides(color = guide_legend(title = "Type"),
-         size = "none", 
-         edge_alpha = "none", 
-         edge_width = guide_legend(override.aes = list(color = "white"))) + # Ensure this line is correctly formatted
-  coord_fixed() +
-  theme_graph(background = 'grey25', text_colour = 'white')
-
-g
-
-```
-
-### 4.2.1 Computing Network Centrality Indices
-
+### 3.1.1 Centrality
 ```{r}
 library(ggraph)
 library(igraph)
@@ -1119,70 +590,6 @@ Closeness centrality can signal efficient trade practices and the potential for 
 
 Clustering helps identify groups of countries with similar trade patterns, which can show regional variations in Big Mac prices due to similarities in trade dynamics and economic profiles. Understanding these clusters can provide insights into regional pricing strategies for the Big Mac and indicate how economic or trade changes in one country might impact others within the same cluster. :::
 
-```{r}
-library(cluster)  
-library(ggplot2)  
-
-library(dplyr)
-library(cluster)  
-library(ggplot2)  
-  
-data_for_clustering <- scale(centrality_measures[,-1])  
-sum(is.na(data_for_clustering)) # Should be 0
-sum(is.nan(data_for_clustering)) # Should be 0
-sum(is.infinite(data_for_clustering)) # Should be 0
-
-data_for_clustering[is.na(data_for_clustering)] <- apply(data_for_clustering, 2, mean, na.rm = TRUE)
-
-
-
-# Perform k-means clustering
-set.seed(123)  # For reproducibility
-k <- 7  # Number of clusters
-clustering_result <- kmeans(data_for_clustering, centers = k, nstart = 25)
-
-
-centrality_measures$cluster <- clustering_result$cluster
-
-print(table(centrality_measures$cluster))
-
-# Visualizing the clusters based on the first two principal components
-pca_result <- prcomp(data_for_clustering)
-centrality_measures$pca1 <- pca_result$x[, 1]
-centrality_measures$pca2 <- pca_result$x[, 2]
-
-ggplot(centrality_measures, aes(x = pca1, y = pca2, color = as.factor(cluster))) +
-  geom_point() +
-  theme_minimal() +
-  labs(color = "Cluster", title = "Cluster Analysis of Countries based on Centrality Measures",
-       x = "Principal Component 1", y = "Principal Component 2")
-
-
-```
-
-```{r}
-library(plotly)
-
-# Assuming centrality_measures dataframe from the previous step is used
-plot_ly(centrality_measures, x = ~pca1, y = ~pca2, type = 'scatter', mode = 'markers',
-        hoverinfo = 'text',
-        text = ~paste('Country: ', node, 
-                      '<br>degree: ', round(degree, 2), 
-                      '<br>betweenness: ', round(betweenness, 2),
-                      '<br>closeness: ', round(closeness, 2),
-                      '<br>eigenvector: ', round(eigenvector, 2),
-                      '<br>Cluster: ', centrality_measures$cluster),
-        marker = list(size = 10, 
-                      color = as.numeric(centrality_measures$cluster),  # Color by cluster
-                      colorscale = 'Viridis',  # You can choose other color scales
-                      line = list(color = 'black', width = 1))) %>%
-  layout(title = 'Cluster Analysis of Countries based on Centrality Measures',
-         xaxis = list(title = 'Principal Component 1'),
-         yaxis = list(title = 'Principal Component 2'),
-         hovermode = 'closest')
-
-```
-
 ### 4.2.2 Computing Community Indices
 
 Tidygraph package inherits many of the community detection algorithms imbedded into igraph We will utilise 3 community detection algo: (1) Leading eigenvector (group_leading_eigen), (2) Walktrap and (3) Spinglass (group_spinglass).Some community algorithms are designed to take into account direction or weight, while others ignore it.
@@ -1197,8 +604,6 @@ g <- bmi2021_graph %>%
   scale_edge_width(range = c(0.1, 5)) +
   geom_node_point(aes(colour = community), size = 3) +
   theme_graph()
-
-g
 ```
 
 ```{r}
@@ -1397,3 +802,4 @@ Insight: This method uses a spin model from statistical mechanics and is particu
 
 The Leading Eigenvector method might highlight dominant countries in trade that potentially set benchmarks for the Big Mac Index. The Walktrap method may reveal more about regional trading blocks or groups of countries with stronger internal trade links that could have similar Big Mac pricing due to shared market conditions. The Spinglass method can uncover more nuanced and multi-level communities, possibly highlighting intricate trade relationships and their cascading effects on the Big Mac Index.
 :::
+
