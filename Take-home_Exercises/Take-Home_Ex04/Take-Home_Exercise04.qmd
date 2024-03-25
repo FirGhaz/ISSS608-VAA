@@ -412,7 +412,7 @@ fig <- plot_ly() %>%
         x = -0.05,
         y = 1.05,
         sizex = 1.1,
-        sizey = 1.4,
+        sizey = 1.13,
         sizing = "stretch",
         opacity = 1,
         layer = "below"
