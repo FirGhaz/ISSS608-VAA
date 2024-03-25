@@ -1,5 +1,5 @@
 ---
-title: "Big Mac Index Choropleth and Trade Network Analysis"
+title: "Big Mac Index Geo Network Analysis"
 subtitle: "Take Home Exercise 04"
 author: "FirGhaz"
 date: 02/03/2024
@@ -17,6 +17,8 @@ This exercise aims to develop a Shiny application featuring an interactive choro
 The final deliverable will be a user-centric Shiny application, optimized for engagement and insight discovery. It will be complemented by a concise report summarizing the analytical narratives that emerge from the visualization. This endeavor will not only underscore the practicality of geospatial data in economic analysis but also aims to enrich the discourse on the implications of trade dynamics for market pricing mechanisms like the Big Mac Index.
 
 # 1 Load Packages
+
+For this Take Home Exercise, the focus will be on packages such as ggforce, igraph, ggraph and visNetwork.
 
 ```{r}
 #| warning: false 
@@ -319,8 +321,8 @@ edges_sf_projected <- st_transform(edges_sf_df, st_crs(worldly_projected))
 
 
 
-col.1 <- adjustcolor("orangered", alpha=0.02)
-col.2 <- adjustcolor("yellow", alpha=0.02)
+col.1 <- adjustcolor("orangered", alpha=0.04)
+col.2 <- adjustcolor("yellow", alpha=0.04)
 edge.pal <- colorRampPalette(c(col.1, col.2), alpha = TRUE)
 
 # Assuming 'Weight' is normalized between 0 and 1 for color mapping
@@ -344,7 +346,7 @@ arc_sf <- st_as_sf(arc_data, coords = c("lon", "lat"), crs = 4326)
 arc_sf_projected <- st_transform(arc_sf, st_crs(worldly_projected))
 
 
-p <- ggplot(map) +
+q <- ggplot(map) +
   geom_sf(data = worldly_projected, fill = col_world, color = alpha("dimgrey", 0.25)) +
   geom_sf(data = node_sf_projected, aes(geometry = geometry), color = "red", size = 1) + 
   geom_sf(data = arc_sf_projected, aes(color = edge_col), size = 0.0001) +  # Assuming 'edge_col' is part of 'arc_sf_projected'
@@ -377,7 +379,7 @@ legend_y_total_trade <- y_range[1] * 1.15 # Start legend slightly above the Y ra
 legend_y_exports <- legend_y_total_trade + abs(y_range[2] - y_range[1]) * 0.05 # 5% above total trade
 legend_y_imports <- legend_y_exports + abs(y_range[2] - y_range[1]) * 0.05
 
-p + annotate("point", x = legend_x, y = legend_y_total_trade, shape = 21, size = 8, fill = "dimgrey", colour = "dimgrey" ) +
+q + annotate("point", x = legend_x, y = legend_y_total_trade, shape = 21, size = 7, fill = "dimgrey", colour = "dimgrey") +
   annotate("text", x = legend_x + 1, y = legend_y_total_trade, label = "Total Trade     1 billion(US)", hjust = 0.52, vjust = 1.6, colour = "grey", size=3.5, fontface = "italic", family = "Arial" ) + 
   annotate("text", x = legend_x + 1, y = legend_y_total_trade, label = "Beef Trade --", hjust = 1.07, vjust = 2.9, colour = "orangered", size=3.5, fontface = "italic", family = "Arial" ) +
   annotate("text", x = legend_x + 1, y = legend_y_exports, label = "Exports", hjust = 1.8, vjust = 1.2, colour = "#f2e901", size=3.5,fontface = "italic", family = "Arial") +
@@ -385,7 +387,200 @@ p + annotate("point", x = legend_x, y = legend_y_total_trade, shape = 21, size =
   annotate("text", x = legend_x + 1, y = legend_y_imports, label = "Trade Network 2021", hjust = 0.58, vjust = -0.4, colour = "white", size=4.3, fontface = "italic", family = "Arial") +
   
 theme_custom
+
+#ggsave("geotrade2.png", plot = q, width = 10, height = 6, dpi = 300)
 ```
+To build Interactivity
+
+```{r}
+img <- png::readPNG("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/images/geotrade.png")
+
+# Convert the image to base64
+img_base64 <- base64enc::dataURI(file = "C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/images/geotrade.png", mime = "image/png")
+
+# Create a Plotly object
+fig <- plot_ly() %>%
+  layout(
+    images = list(
+      list(
+        source = img_base64,
+        xref = "paper",
+        yref = "paper",
+        x = -0.05,
+        y = 1.05,
+        sizex = 1.1,
+        sizey = 1.11,
+        sizing = "stretch",
+        opacity = 1,
+        layer = "below"
+      )
+    ),
+    xaxis = list(range = c(-180, 180), showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+    yaxis = list(range = c(-90, 90), showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+ geo = list(
+      showland = FALSE, 
+      showcountries = FALSE,
+      showocean = FALSE,
+      showcoastlines = FALSE,
+      bgcolor = 'rgba(0,0,0,0)',
+      projection = list(type = 'robinson',
+      lataxis = list(range = c(-90, 90), fixedrange = TRUE), 
+      lonaxis = list(range = c(-180, 180), fixedrange = TRUE),
+      scope = 'world',
+      showframe = FALSE,
+      dragmode = FALSE
+)), dragmode = FALSE)
+  
+
+# Prepare the hover text with HTML tags for formatting
+bmi_node_2021$hover_text <- paste(
+  "", bmi_node_2021$country,
+  "<br>Total Trade: $", bmi_node_2021$total_trade,
+  "<br>Imports: $", bmi_node_2021$import_usd,
+  "<br>Exports: $", bmi_node_2021$export_usd
+)
+
+# Add the nodes as scattergeo trace
+fig <- fig %>%
+  add_trace(
+    data = bmi_node_2021,
+    type = 'scattergeo',
+    mode = 'markers',
+    text = ~hover_text,
+    hoverinfo = 'text',
+    hoverlabel = list(bgcolor = "white", font = list(color = "black")),
+    marker = list(
+      size = 0.0001, # Adjust size as needed
+      color = 'grey90',
+       line = list(width = 1, color = 'red'),
+      projection = list(type = 'robinson')# Adjust color as needed
+    ),
+    lon = ~LON,
+    lat = ~LAT,
+    dragmode = FALSE,
+    rotation = list(LAT = 0, LON = 0), 
+    lataxis = list(range = c(-90, 90), fixedrange = TRUE), 
+    lonaxis = list(range = c(-180, 180), fixedrange = TRUE),
+    scope = 'world',
+    showframe = FALSE,
+    dragmode = FALSE
+  )
+
+# Display the plot
+fig
+```
+
+
+FOR EDGE
+
+```{r}
+img <- png::readPNG("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/images/geotrade.png")
+
+# Convert the image to base64
+img_base64 <- base64enc::dataURI(file = "C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/images/geotrade.png", mime = "image/png")
+
+# Create a Plotly object
+fig <- plot_ly() %>%
+  layout(
+    images = list(
+      list(
+        source = img_base64,
+        xref = "paper",
+        yref = "paper",
+        x = -0.067,
+        y = 1.00,
+        sizex = 1.12,
+        sizey = 1.,
+        sizing = "stretch",
+        opacity = 1,
+        layer = "below"
+      )
+    ),
+    xaxis = list(range = c(-180, 180), showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+    yaxis = list(range = c(-90, 90), showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+ geo = list(
+      showland = FALSE, 
+      showcountries = FALSE,
+      showocean = FALSE,
+      showcoastlines = FALSE,
+      bgcolor = 'rgba(0,0,0,0)',
+      projection = list(type = 'robinson',
+      lataxis = list(range = c(-90, 90), fixedrange = TRUE), 
+      lonaxis = list(range = c(-180, 180), fixedrange = TRUE),
+      scope = 'world',
+      showframe = FALSE,
+      dragmode = FALSE
+)), dragmode = FALSE)
+  
+
+# Prepare the hover text with HTML tags for formatting
+bmi_node_2021$hover_text <- paste(
+  "", bmi_node_2021$country,
+  "<br>Total Trade: $", bmi_node_2021$total_trade,
+  "<br>Imports: $", bmi_node_2021$import_usd,
+  "<br>Exports: $", bmi_node_2021$export_usd
+)
+bmi_edges_2021$hover_text <- paste(
+  "Origin: ", bmi_edges_2021$Origin,
+  "<br>Main Partner: ", bmi_edges_2021$Partners
+  
+)
+
+all_lons <- c()
+all_lats <- c()
+all_texts <- c()
+
+# Loop through each edge to populate the lists
+for(i in 1:nrow(bmi_edges_2021)) {
+  # Add source and target coordinates
+  all_lons <- c(all_lons, bmi_edges_2021$source_lon[i], bmi_edges_2021$target_lon[i],1)
+  all_lats <- c(all_lats, bmi_edges_2021$source_lat[i], bmi_edges_2021$target_lat[i],1)
+  # Add hover text for the edge
+  all_texts <- c(all_texts, bmi_edges_2021$hover_text[i], "", "")
+}  
+# Add the nodes as scattergeo trace
+fig <- fig %>%
+  add_trace(
+    data = bmi_node_2021,
+    type = 'scattergeo',
+    mode = 'markers',
+    text = ~hover_text,
+    hoverinfo = 'text',
+    hoverlabel = list(bgcolor = "white", font = list(color = "black")),
+    marker = list(
+      size = 0.0001, # Adjust size as needed
+      color = 'grey90',
+       line = list(width = 1, color = 'red'),
+      projection = list(type = 'robinson')# Adjust color as needed
+    ),
+    lon = ~LON,
+    lat = ~LAT,
+    dragmode = FALSE,
+    rotation = list(LAT = 0, LON = 0), 
+    lataxis = list(range = c(-90, 90), fixedrange = TRUE), 
+    lonaxis = list(range = c(-180, 180), fixedrange = TRUE),
+    scope = 'world',
+    showframe = FALSE,
+    dragmode = FALSE
+  )%>%
+
+  add_trace(
+    type = "scattergeo",
+    mode = "lines",
+    lon = all_lons,
+    lat = all_lats,
+    text = all_texts,
+    hoverinfo = "text",
+    hoverlabel = list(bgcolor = "white", font = list(color = "orangered")),
+    line = list(color = 'orangered', width = 0.00002, alpha = 0.1) # Customize line appearance here
+    
+  )
+
+# Display the plot
+fig
+```
+
+
 
 # 3 Visualising the Network: Exploratory Data Analysis
 
@@ -415,7 +610,7 @@ V(bmi2021_graph)$bmi_usd_price <- bmi_node_2021$bmi_usd_price
 V(bmi2021_graph)$gdp_per_capita<- bmi_node_2021$gdp_per_capita
 V(bmi2021_graph)$inflation <- bmi_node_2021$inflation
 
-ggraph(bmi2021_graph, layout = "kk") + #layout options = kk, fr, nicely,
+ggraph(bmi2021_graph, layout = "fr") + #layout options = kk, fr, nicely,
   geom_node_point(aes(fill = V(bmi2021_graph)$bmi_usd_price , size = V(bmi2021_graph)$bmi_usd_price, color = continent, show.legend=FALSE))+
   geom_edge_link2(aes(color = Trade, width = Value), alpha = 0.6, show.legend=FALSE) + 
   scale_edge_color_manual(values = c("Import Quantity" = "#00CCB0", "Export Quantity" = "#FF6ABE")) +
@@ -813,9 +1008,9 @@ edges_data <- data.frame(from = bmi_edges_2021$Origin,
 
 # Create the network visualization
 network <- visNetwork(nodes_data, edges_data) %>%
-  visNodes(aes(fill = "community", color = "community"), shape = "dot", scaling = list(label = list(enabled = TRUE), size = 8), color = list(background = "white", border = "#2B7CE9"),
+  visNodes(aes(fill = "community", color = "community"), shape = "dot", scaling = list(label = list(enabled = TRUE)), color = list(background = "white", border = "#2B7CE9"),
            font = list(color = "white")) %>%
-  visEdges(smooth = TRUE, color = list(color = "#A5ABB6", highlight = "#FF4F09", arrows = "to")) %>%
+  visEdges(smooth = FALSE, color = list(color = "#A5ABB6", highlight = "#FF4F09", arrows = "to")) %>%
   visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
   visLayout(randomSeed = 123) %>%
   visInteraction(navigationButtons = TRUE) %>%
