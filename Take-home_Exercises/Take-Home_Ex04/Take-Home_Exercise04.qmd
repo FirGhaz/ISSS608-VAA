@@ -379,30 +379,33 @@ legend_y_total_trade <- y_range[1] * 1.15 # Start legend slightly above the Y ra
 legend_y_exports <- legend_y_total_trade + abs(y_range[2] - y_range[1]) * 0.05 # 5% above total trade
 legend_y_imports <- legend_y_exports + abs(y_range[2] - y_range[1]) * 0.05
 
-q + annotate("point", x = legend_x, y = legend_y_total_trade, shape = 21, size = 7, fill = "dimgrey", colour = "dimgrey") +
-  annotate("text", x = legend_x + 1, y = legend_y_total_trade, label = "Total Trade     1 billion(US)", hjust = 0.52, vjust = 1.6, colour = "grey", size=3.5, fontface = "italic", family = "Arial" ) + 
-  annotate("text", x = legend_x + 1, y = legend_y_total_trade, label = "Beef Trade --", hjust = 1.07, vjust = 2.9, colour = "orangered", size=3.5, fontface = "italic", family = "Arial" ) +
-  annotate("text", x = legend_x + 1, y = legend_y_exports, label = "Exports", hjust = 1.8, vjust = 1.2, colour = "#f2e901", size=3.5,fontface = "italic", family = "Arial") +
-  annotate("text", x = legend_x + 1, y = legend_y_imports, label = "Imports", hjust = 1.8, vjust = 0.8, colour = "#FF4843", size=3.5, fontface = "italic", family = "Arial") +
-  annotate("text", x = legend_x + 1, y = legend_y_imports, label = "Trade Network 2021", hjust = 0.58, vjust = -0.4, colour = "white", size=4.3, fontface = "italic", family = "Arial") +
+q + annotate("point", x = legend_x, y = legend_y_total_trade, shape = 21, size = 9, fill = "dimgrey", colour = "dimgrey") +
+  annotate("text", x = legend_x + 1, y = legend_y_total_trade, label = "Total Trade       1 billion(US)", hjust = 0.49, vjust = 1.3, colour = "grey", size=3.5, fontface = "italic", family = "Arial" ) + 
+  annotate("text", x = legend_x + 1, y = legend_y_total_trade, label = "Beef Trade --", hjust = 0.97, vjust = 2.6, colour = "orangered", size=3.5, fontface = "bold", family = "Arial" ) +
+  annotate("text", x = legend_x + 1, y = legend_y_exports, label = "Exports", hjust = 1.8, vjust = 0.9, colour = "#f2e901", size=3.5,fontface = "italic", family = "Arial") +
+  annotate("text", x = legend_x + 1, y = legend_y_imports, label = "Imports", hjust = 1.8, vjust = 0.6, colour = "#FF4843", size=3.5, fontface = "italic", family = "Arial") +
+  annotate("text", x = legend_x + 1, y = legend_y_imports, label = "Trade Network 2021", hjust = 0.58, vjust = -0.6, colour = "white", size=4.3, fontface = "italic", family = "Arial") +
   
 theme_custom
 
-#ggsave("geotrade2.png", plot = q, width = 10, height = 6, dpi = 300)
+#ggsave("geotrade1.png", plot = r, width = 10, height = 6, dpi = 300)
 ```
 To build Interactivity
 
 ```{r}
-img <- png::readPNG("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/images/geotrade.png")
+#| warning: false 
+bmi_node_2021 <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/bmi_node_2021_add.csv')
+bmi_edges_2021 <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/import_export_beef_edges5-2021.csv')
 
-# Convert the image to base64
-img_base64 <- base64enc::dataURI(file = "C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/images/geotrade.png", mime = "image/png")
+img <- png::readPNG("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/images/geotrade1.png")
 
-# Create a Plotly object
-fig <- plot_ly() %>%
+img_base64 <- base64enc::dataURI(file = "C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/images/geotrade1.png", mime = "image/png")
+
+
+fig <- plot_ly() %>% 
   layout(
     images = list(
-      list(
+      list( 
         source = img_base64,
         xref = "paper",
         yref = "paper",
@@ -427,21 +430,17 @@ fig <- plot_ly() %>%
       lataxis = list(range = c(-90, 90), fixedrange = TRUE), 
       lonaxis = list(range = c(-180, 180), fixedrange = TRUE),
       scope = 'world',
-      showframe = FALSE,
-      dragmode = FALSE
+      showframe = FALSE
 )), dragmode = FALSE)
-  
 
-# Prepare the hover text with HTML tags for formatting
 bmi_node_2021$hover_text <- paste(
-  "", bmi_node_2021$country,
-  "<br>Total Trade: $", bmi_node_2021$total_trade,
-  "<br>Imports: $", bmi_node_2021$import_usd,
-  "<br>Exports: $", bmi_node_2021$export_usd
-)
-
-# Add the nodes as scattergeo trace
-fig <- fig %>%
+  "",bmi_node_2021$country,
+  "<br> BMI (USD): $", bmi_node_2021$bmi_usd_price,
+  "<br> Total Trade: $", bmi_node_2021$total_trade,
+  "<br> Imports: $", bmi_node_2021$import_usd,
+  "<br> Exports: $", bmi_node_2021$export_usd)
+  
+fig <- fig %>% 
   add_trace(
     data = bmi_node_2021,
     type = 'scattergeo',
@@ -464,119 +463,9 @@ fig <- fig %>%
     scope = 'world',
     showframe = FALSE,
     dragmode = FALSE
-  )
+  ) 
 
-# Display the plot
-fig
-```
-
-
-FOR EDGE
-
-```{r}
-img <- png::readPNG("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/images/geotrade.png")
-
-# Convert the image to base64
-img_base64 <- base64enc::dataURI(file = "C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/images/geotrade.png", mime = "image/png")
-
-# Create a Plotly object
-fig <- plot_ly() %>%
-  layout(
-    images = list(
-      list(
-        source = img_base64,
-        xref = "paper",
-        yref = "paper",
-        x = -0.067,
-        y = 1.00,
-        sizex = 1.12,
-        sizey = 1.,
-        sizing = "stretch",
-        opacity = 1,
-        layer = "below"
-      )
-    ),
-    xaxis = list(range = c(-180, 180), showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-    yaxis = list(range = c(-90, 90), showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
- geo = list(
-      showland = FALSE, 
-      showcountries = FALSE,
-      showocean = FALSE,
-      showcoastlines = FALSE,
-      bgcolor = 'rgba(0,0,0,0)',
-      projection = list(type = 'robinson',
-      lataxis = list(range = c(-90, 90), fixedrange = TRUE), 
-      lonaxis = list(range = c(-180, 180), fixedrange = TRUE),
-      scope = 'world',
-      showframe = FALSE,
-      dragmode = FALSE
-)), dragmode = FALSE)
-  
-
-# Prepare the hover text with HTML tags for formatting
-bmi_node_2021$hover_text <- paste(
-  "", bmi_node_2021$country,
-  "<br>Total Trade: $", bmi_node_2021$total_trade,
-  "<br>Imports: $", bmi_node_2021$import_usd,
-  "<br>Exports: $", bmi_node_2021$export_usd
-)
-bmi_edges_2021$hover_text <- paste(
-  "Origin: ", bmi_edges_2021$Origin,
-  "<br>Main Partner: ", bmi_edges_2021$Partners
-  
-)
-
-all_lons <- c()
-all_lats <- c()
-all_texts <- c()
-
-# Loop through each edge to populate the lists
-for(i in 1:nrow(bmi_edges_2021)) {
-  # Add source and target coordinates
-  all_lons <- c(all_lons, bmi_edges_2021$source_lon[i], bmi_edges_2021$target_lon[i],1)
-  all_lats <- c(all_lats, bmi_edges_2021$source_lat[i], bmi_edges_2021$target_lat[i],1)
-  # Add hover text for the edge
-  all_texts <- c(all_texts, bmi_edges_2021$hover_text[i], "", "")
-}  
-# Add the nodes as scattergeo trace
-fig <- fig %>%
-  add_trace(
-    data = bmi_node_2021,
-    type = 'scattergeo',
-    mode = 'markers',
-    text = ~hover_text,
-    hoverinfo = 'text',
-    hoverlabel = list(bgcolor = "white", font = list(color = "black")),
-    marker = list(
-      size = 0.0001, # Adjust size as needed
-      color = 'grey90',
-       line = list(width = 1, color = 'red'),
-      projection = list(type = 'robinson')# Adjust color as needed
-    ),
-    lon = ~LON,
-    lat = ~LAT,
-    dragmode = FALSE,
-    rotation = list(LAT = 0, LON = 0), 
-    lataxis = list(range = c(-90, 90), fixedrange = TRUE), 
-    lonaxis = list(range = c(-180, 180), fixedrange = TRUE),
-    scope = 'world',
-    showframe = FALSE,
-    dragmode = FALSE
-  )%>%
-
-  add_trace(
-    type = "scattergeo",
-    mode = "lines",
-    lon = all_lons,
-    lat = all_lats,
-    text = all_texts,
-    hoverinfo = "text",
-    hoverlabel = list(bgcolor = "white", font = list(color = "orangered")),
-    line = list(color = 'orangered', width = 0.00002, alpha = 0.1) # Customize line appearance here
-    
-  )
-
-# Display the plot
+fig <- fig %>% config(displayModeBar = FALSE)
 fig
 ```
 
@@ -906,7 +795,8 @@ In the Shiny App, we will allow the audience to explore these statistical method
 | Some countries much higher centrality, which could mean **the trade network relies heavily on these nodes**, possibly creating vulnerability to disruptions.                                               | Degree centrality can suggest potential market influence, with highly connected nodes being able to leverage their position for competitive advantage.                       | This measure reflects the potential for a node to access and influence the broader network through its connections.                                                                                                                                           | Closeness centrality offers insight **into the speed at which a country** can react to supply and demand changes across the global network                                                          |
 | Countries with lower betweenness centrality might have more **direct trade links or may not be critical transit points within the network.**                                                               | A spread of degree centrality across the network would indicate a democratized trading environment, but a concentration suggests a few key players dominate.                 | Low eigenvector centrality could indicate peripheral or less influential roles within the trading network, possibly **representing newer or more specialized markets**.                                                                                       | Low closeness centrality might point to **potential delays in trade flows or inefficiencies,** possibly due to geographical or logistical factor                                                    |
 
-:::callout: Summary of Insights 1. Network Roles and Big Mac Pricing:
+:::callout: Summary of Insights
+1. Network Roles and Big Mac Pricing:
 
 Countries central in the beef trade network, indicated by high betweenness or degree centrality, may have more stable and competitive beef pricing due to their numerous trade links, which could affect their local Big Mac prices. The presence of key influencers, as suggested by eigenvector centrality, could indicate the potential for price setting or market influence, which can trickle down to the pricing of beef and related products like the Big Mac.
 
@@ -916,7 +806,8 @@ Closeness centrality can signal efficient trade practices and the potential for 
 
 3.  Cluster Analysis and Market Groupings:
 
-Clustering helps identify groups of countries with similar trade patterns, which can show regional variations in Big Mac prices due to similarities in trade dynamics and economic profiles. Understanding these clusters can provide insights into regional pricing strategies for the Big Mac and indicate how economic or trade changes in one country might impact others within the same cluster. :::
+Clustering helps identify groups of countries with similar trade patterns, which can show regional variations in Big Mac prices due to similarities in trade dynamics and economic profiles. Understanding these clusters can provide insights into regional pricing strategies for the Big Mac and indicate how economic or trade changes in one country might impact others within the same cluster. 
+:::
 
 ## 3.3 Computing Community Indices
 
@@ -1151,6 +1042,7 @@ network <- network %>%
 network
 
 ```
+
 
 ::: Callout:Insights
 1.  Walktrap
