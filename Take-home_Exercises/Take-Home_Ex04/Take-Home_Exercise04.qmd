@@ -410,9 +410,9 @@ fig <- plot_ly() %>%
         xref = "paper",
         yref = "paper",
         x = -0.05,
-        y = 1.05,
+        y = 1.08,
         sizex = 1.1,
-        sizey = 1.11,
+        sizey = 1.14,
         sizing = "stretch",
         opacity = 1,
         layer = "below"
@@ -483,8 +483,7 @@ fig <- fig %>%
     scope = 'world',
     showframe = FALSE,
     dragmode = FALSE
-  ) 
-}
+  ) }
 fig <- fig%>% config(displayModeBar = FALSE)
 
 fig
