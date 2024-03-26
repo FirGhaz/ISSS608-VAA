@@ -510,10 +510,6 @@ ggraph(bmi2021_graph, layout = "kk") + #layout options = kk, fr, nicely,
   scale_edge_width(range = c(0.5, 7)) +
   geom_node_text(aes(label = country), repel = TRUE, size = 3, hjust = 0, vjust = 0, nudge_y=-0.2, nudge_x=-0.2, color = "white") +
   theme_graph(background = '#1D201F', text_colour = 'white')
-  #guides(color = guide_legend(title = "Continents") +
-  #edge_width = guide_legend(override.aes = list(color = "white"))) 
- #coord_fixed() 
-#
 ```
 
 
@@ -539,10 +535,7 @@ ggraph(bmi2021_graph, layout = "linear") + #layout options = kk, fr, nicely,
     plot.margin=unit(c(0,0,0.0,0), "null"),
     panel.spacing=unit(c(0,0,3.4,0), "null")
   ) 
-  #guides(color = guide_legend(title = "Continents") +
-  #edge_width = guide_legend(override.aes = list(color = "white"))) 
- #coord_fixed() 
-#
+  
 ```
 
 Circular Arc  *linear + arc*
@@ -628,7 +621,7 @@ edges_data <- data.frame(from = bmi_edges_2021$Origin,
                          arrows = 'to')
 
 network <- visNetwork(nodes_data, edges_data, width = "100%", height = "400px") %>%
-  visNodes(size = "bmi_usd_price", shadow = TRUE,
+  visNodes(size = V(bmi2021_graph)$bmi_usd_price, shadow = TRUE,
            color = list(background = "white", border = "#2B7CE9"),
            font = list(color = "white")) %>%
   visEdges(smooth = FALSE, color = list(color = "#A5ABB6", highlight = "#FF4F09")) %>%
@@ -862,10 +855,13 @@ centrality_measures <- data.frame(
 
 
 
-centrality_measures_arranged <- centrality_measures %>%
+centrality_measures<- centrality_measures %>%
+  mutate(closeness = ifelse(is.nan(closeness), 0.0001, closeness)) %>%
+  mutate(betweenness = case_when(betweenness == 0 ~ 1.5, TRUE ~ betweenness)) %>%
+  #mutate(eigenvector = case_when(eigenvector == 0 ~ 1.5, TRUE ~ eigenvector))%>%
   arrange(desc(eigenvector)) 
 
-print(centrality_measures_arranged)
+print(centrality_measures)
 ```
 
 *Degree Centrality*: The simplest form of centrality, degree centrality, counts how many connections (edges) a node has. In directed networks, you can further distinguish between in-degree (number of incoming edges) and out-degree (number of outgoing edges). Nodes with a high degree centrality are considered highly connected or active within the network.
@@ -877,10 +873,219 @@ print(centrality_measures_arranged)
 *Eigenvector Centrality*: This measure considers not just the quantity of connections a node has, but also the quality. A node scores high in eigenvector centrality if it is connected to other nodes that are themselves central within the network. This measure reflects the intuition that not all connections are equal, and being connected to highly connected nodes contributes more to a node's score.
 
 
+```{r}
+library(dplyr)
+
+# Assuming `centrality_df` is your dataframe with centrality measures
+library(dplyr)
+library(tidyr)
+
+
+# Assuming `centrality_measures` is your dataframe with centrality measures
+normalized_centrality_measures <- centrality_measures %>%
+  # Replace NaN values in closeness with 0 (or another appropriate value)
+  mutate(closeness = ifelse(is.nan(closeness), 0.0001, closeness)) %>%
+  mutate(betweenness = case_when(betweenness == 0 ~ 1.5, TRUE ~ betweenness)) %>%
+  #mutate(eigenvector = case_when(eigenvector == 0 ~ 1.5, TRUE ~ eigenvector))
+  mutate(across(c(degree, betweenness, closeness, eigenvector),
+                ~(. - min(.)) / (max(.) - min(.))))
+
+```
+
+```{r}
+library(ggplot2)
+library(tidyr)
+library(ggplot2)
+library(tidyr)
+library(dplyr)
+
+# Assuming `normalized_centrality_measures` is your original data frame
+selected_countries <- c("Argentina", "Australia", "Brazil", "United Kingdom", 
+                        "Canada", "Chile", "China", "Czech Republic", 
+                        "Denmark", "Hong Kong", "Hungary", "Indonesia", 
+                        "Japan", "Malaysia", "Mexico", "New Zealand", 
+                        "Peru", "Philippines", "Poland", "Russia", 
+                        "Singapore", "South Africa", "South Korea", 
+                        "Sweden", "Switzerland", "Thailand", "Turkey", 
+                        "United States")
+
+# Pivot the data to long format
+long_centrality_measures <- normalized_centrality_measures %>%
+  filter(node %in% selected_countries) %>%
+  pivot_longer(cols = c(degree, betweenness, closeness, eigenvector),
+               names_to = "measure",
+               values_to = "value")
+
+# Create a function to generate plots for a given measure
+generate_plot <- function(measure) {
+  plot <- ggplot(long_centrality_measures %>% filter(measure == !!measure), 
+                 aes(x = reorder(node, value), y = value)) +
+    geom_col(aes(fill = value)) + 
+    scale_fill_gradient(low = "#f2e901", high = "#FF2F09") +
+    
+    labs(x = "Node", y = paste(measure, "Centrality (Normalized)"), 
+         title = paste(measure, "Centrality of Nodes")) +
+    coord_flip() + 
+    theme_minimal() +
+    theme(
+      axis.text.y = element_text(size = 6),  # Adjust the y-axis font size
+      strip.text.y = element_text(size = 6),
+      legend.position = "none"# Adjust the facet label font size if needed
+    ) +
+    scale_y_continuous(limits = c(0, 1))  
+  return(plot)
+}
+
+# Generate the plots
+degree_plot <- generate_plot("degree")
+betweenness_plot <- generate_plot("betweenness")
+closeness_plot <- generate_plot("closeness")
+eigenvector_plot <- generate_plot("eigenvector")
+
+# Print the plots
+degree_plot
+betweenness_plot
+closeness_plot
+eigenvector_plot
+
+```
+```{r}
+selected_countries <- c("Argentina", "Australia", "Brazil", "United Kingdom", 
+                        "Canada", "Chile", "China", "Czech Republic", 
+                        "Denmark", "Hong Kong", "Hungary", "Indonesia", 
+                        "Japan", "Malaysia", "Mexico", "New Zealand", 
+                        "Peru", "Philippines", "Poland", "Russia", 
+                        "Singapore", "South Africa", "South Korea", 
+                        "Sweden", "Switzerland", "Thailand", "Turkey", 
+                        "United States")
+
+long_centrality_measures <- normalized_centrality_measures %>%
+  filter(node %in% selected_countries) %>%
+  pivot_longer(cols = c(degree, betweenness, closeness, eigenvector),
+               names_to = "measure",
+               values_to = "value")
+
+###################################################################################
+
+# Merge back the original degree centrality measure for hover info
+long_centrality_measures_with_original <- long_centrality_measures %>%
+  left_join(centrality_measures %>% select(node, original_degree = degree), by = "node")
+
+# Generate the plot for degree measure
+degree_data <- long_centrality_measures_with_original %>%
+  filter(measure == "degree")
+
+degree_plot <- ggplot(degree_data, aes(x = reorder(node, value), y = value, text = paste("Country:", node, "<br>Degree Centrality:", original_degree))) +
+  geom_col(aes(fill = value)) +
+  scale_fill_gradient(low = "#f2e901", high = "#FF2F09") +
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(x = "Node", y = "Degree Centrality (Normalized)", title = "Degree Centrality of Nodes") +
+  coord_flip() +
+  theme_minimal() +
+  theme(
+      axis.text.y = element_text(size = 5),  # Adjust the y-axis font size
+      strip.text.y = element_text(size = 5),
+      legend.position = "none"# Adjust the facet label font size if needed
+    )
+
+# Convert to Plotly for interactivity
+degree_plotly <- ggplotly(degree_plot, tooltip = "text")
+
+# Print the interactive plot
+degree_plotly
+```
 
 
 
+```{r}
+# Merge back the original closeness centrality measure for hover info
+long_centrality_measures_with_original <- long_centrality_measures %>%
+  left_join(centrality_measures %>% select(node, original_closeness = closeness), by = "node")
 
+# Generate the plot for closeness measure
+closeness_data <- long_centrality_measures_with_original %>%
+  filter(measure == "closeness")
+
+closeness_plot <- ggplot(closeness_data, aes(x = reorder(node, value), y = value, text = paste("Country:", node, "<br> Closeness Centrality:", original_closeness))) +
+  geom_col(aes(fill = value)) +
+  scale_fill_gradient(low = "#f2e901", high = "#FF2F09") +
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(x = "Node", y = "Closeness Centrality (Normalized)", title = "Closeness Centrality of Nodes") +
+  coord_flip() +
+  theme_minimal() +
+  theme(
+      axis.text.y = element_text(size = 5),  # Adjust the y-axis font size
+      strip.text.y = element_text(size = 5),
+      legend.position = "none"# Adjust the facet label font size if needed
+    )
+
+# Convert to Plotly for interactivity
+closeness_plotly <- ggplotly(closeness_plot, tooltip = "text")
+
+# Print the interactive plot
+closeness_plotly
+```
+
+
+```{r}
+long_centrality_measures_with_original <- long_centrality_measures %>%
+  left_join(centrality_measures %>% select(node, original_betweenness = betweenness), by = "node")
+
+# Generate the plot for closeness measure
+betweenness_data <- long_centrality_measures_with_original %>%
+  filter(measure == "betweenness")
+
+betweenness_plot <- ggplot(betweenness_data, aes(x = reorder(node, value), y = value, text = paste("Country:", node, "<br> Betweenness Centrality:", original_betweenness))) +
+  geom_col(aes(fill = value)) +
+  scale_fill_gradient(low = "#f2e901", high = "#FF2F09") +
+  scale_y_continuous(limits = c(0, 1)) +
+  labs(x = "Node", y = "Betweenness Centrality (Normalized)", title = "betweenness Centrality of Nodes") +
+  coord_flip() +
+  theme_minimal() + theme(
+      axis.text.y = element_text(size = 5),  # Adjust the y-axis font size
+      strip.text.y = element_text(size = 5),
+      legend.position = "none"# Adjust the facet label font size if needed
+    )
+
+# Convert to Plotly for interactivity
+betweenness_plotly <- ggplotly(betweenness_plot, tooltip = "text")
+
+# Print the interactive plot
+betweenness_plotly
+```
+
+
+```{r}
+long_centrality_measures_with_original <- long_centrality_measures %>%
+  left_join(centrality_measures %>% select(node, original_eigenvector = eigenvector), by = "node")
+
+# Generate the plot for eigenvector measure
+eigenvector_data <- long_centrality_measures_with_original %>%
+  filter(measure == "eigenvector")
+
+eigenvector_plot <- ggplot(eigenvector_data, aes(x = reorder(node, value), y = value, text = paste("Country:", node, "<br>Eigenvector Centrality:", original_eigenvector))) +
+  geom_col(aes(fill = value)) +
+  scale_fill_gradient(low = "#f2e901", high = "#FF2F09") +
+  labs(x = "Node", y = "Eigenvector Centrality (Normalized)", title = "Centrality of Nodes") +
+  coord_flip() +
+  theme_minimal() + theme(
+      axis.text.y = element_text(size = 5),  # Adjust the y-axis font size
+      strip.text.y = element_text(size = 5),
+      legend.position = "none"# Adjust the facet label font size if needed
+    )
+
+# Convert to Plotly for interactivity
+eigenvector_plotly <- ggplotly(eigenvector_plot, tooltip = "text")
+
+# Print the interactive plot
+eigenvector_plotly
+```
+```{r}
+combined_plot <- subplot(degree_plotly, betweenness_plotly,closeness_plotly, eigenvector_plotly, nrows = 2, margin = 0.05)
+
+# Print the combined plot
+combined_plot
+```
 
 
 In the Shiny App, we will allow the audience to explore these statistical methods to gain insights from the networks.
@@ -915,30 +1120,34 @@ Tidygraph package inherits many of the community detection algorithms imbedded i
 ```{r}
 #| warning: false 
 
-# Assuming bmi2021_graph is already created and is an igraph object
-# Calibrating Parameters for Spinglass
+# Calibrating Parameters for Walktrap
+# Choosing the weights
+#E(bmi2021_graph)$Value
+#E(bmi2021_graph)$betweenness 
+#E(bmi2021_graph)$eigenvector 
+#E(bmi2021_graph)$closenesss
+#E(bmi2021_graph)$degree 
+
+weights = E(bmi2021_graph)$Value
 steps = 100 # (2 to 100)
 
-# Ensure bmi2021_graph is a tbl_graph; if it's an igraph object, convert it
-bmi2021_graph_tbl <- as_tbl_graph(bmi2021_graph)
-
 walktrap_communities <- cluster_walktrap(bmi2021_graph, 
-                                           steps = steps)
+                                         steps = steps,
+                                         weights = weights)
 # Assign community membership to nodes for visualization
 V(bmi2021_graph)$community <- as.factor(membership(walktrap_communities))
 
-set.seed(123)
-g <- ggraph(bmi2021_graph, layout = 'kk') + #can  choose "fr", "kk", "circle", "graphopt"
+g <- ggraph(bmi2021_graph, layout = 'kk') +
   geom_edge_link2(aes(width = Value), alpha = 0.5) +
   scale_edge_width(range = c(0.5, 8)) +
   geom_node_point(aes(fill = bmi_usd_price, size = bmi_usd_price, color = community), show.legend = FALSE) +
   geom_node_text(aes(label = country), repel = TRUE, size = 2, hjust = 0.6, vjust = -1.8, color = "black") +
-  theme_graph()+
-  labs(fill = "BMI USD Price", color = "Community")
+  theme_graph() +
+  labs(fill = "BMI USD Price", color = "Community")  
 
 g
-
 ```
+
 *Calling out the communities* - These communities will be passed on for regression.
 ```{r}
 community_membership <- membership(walktrap_communities)
@@ -1029,17 +1238,24 @@ gamma: The resolution parameter influences the size of the communities detected.
 ```{r}
 #| warning: false 
 
-# Calculate betweenness to visualize node importance
-V(bmi2021_graph)$betweenness <- betweenness(bmi2021_graph)
+# Choosing the weights
+#E(bmi2021_graph)$Value
+#E(bmi2021_graph)$betweenness 
+#E(bmi2021_graph)$eigenvector 
+#E(bmi2021_graph)$closenesss
+#E(bmi2021_graph)$degree 
 
 # Assuming bmi2021_graph is already created and is an igraph object
 # Calibrating Parameters for Spinglass
-spins = 15 # (2 to 15)
+spins = 30 # (2 to 30)
 gamma = 1 # (1 to 15)
+weights = E(bmi2021_graph)$Value
+
 
 spinglass_communities <- cluster_spinglass(bmi2021_graph, 
                                            spins = spins, 
-                                           gamma = gamma)
+                                           gamma = gamma,
+                                           weights = weights)
 
 # Assign community membership to nodes for visualization
 V(bmi2021_graph)$community <- as.factor(membership(spinglass_communities))
@@ -1050,7 +1266,7 @@ g <- ggraph(bmi2021_graph, layout = 'kk') +
   geom_edge_link(aes(width = Value), alpha = 0.5) +
   scale_edge_width(range = c(0.5, 8)) + 
   geom_node_point(aes(fill = bmi_usd_price, size = bmi_usd_price, color = community), show.legend = FALSE) +
-  geom_node_text(aes(label = country), repel = TRUE, size = 2, hjust = 0.6, vjust = -1.8, color = "black") +
+  geom_node_text(aes(label = country), repel = TRUE, size = 2, hjust = -0.2, vjust = 0.2, color = "black") +
   theme_graph() +
   labs(fill = "BMI USD Price", color = "Community", size = "Betweenness")
 
@@ -1083,7 +1299,7 @@ if(length(community_membership) == length(node_names)) {
 #| warning: false 
 
 # Perform Spinglass community detection
-communities_spinglass <- cluster_spinglass(bmi2021_graph, weights = E(bmi2021_graph)$weight)
+communities_spinglass <- cluster_spinglass(bmi2021_graph, weights = E(bmi2021_graph)$Value)
 
 # Add community info to the nodes dataframe
 bmi_node_2021$community <- communities_spinglass$membership
@@ -1097,7 +1313,7 @@ num_communities <- length(unique(bmi_node_2021$community))
 
 # Generate a color for each community
 # Use colorRampPalette to create more colors if needed
-color_palette <- colorRampPalette(RColorBrewer::brewer.pal(min(9, num_communities), name = "Set1"))
+color_palette <- colorRampPalette(RColorBrewer::brewer.pal(min(12, num_communities), name = "Set1"))
 community_colors <- color_palette(num_communities)
 
 # Map community IDs to colors
@@ -1120,7 +1336,7 @@ bmi_node_2021$label <- bmi_node_2021$country
 network <- visNetwork(nodes = bmi_node_2021, edges = bmi_edges_2021_aggregated) %>%
   visNodes(aes(fill = "community", color = "community"), shape = "dot", scaling = list(label = list(enabled = TRUE)),
            font = list(size = 20, face = "arial", color = "white", bold = "true")) %>%
-  visEdges(smooth = FALSE, color = list(color = "#A5ABB6", highlight = "#FF4F09", arrows = "to")) %>%
+  visEdges(smooth = TRUE, color = list(color = "#A5ABB6", highlight = "#FF4F09", arrows = "to")) %>%
   visOptions(highlightNearest = TRUE, nodesIdSelection = TRUE) %>%
   visLayout(randomSeed = 123) %>%
   visInteraction(navigationButtons = TRUE) %>%
