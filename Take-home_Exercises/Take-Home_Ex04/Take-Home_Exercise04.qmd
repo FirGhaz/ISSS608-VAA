@@ -465,29 +465,7 @@ fig <- fig %>%
     dragmode = FALSE
   ) 
 
-bmi_edges_2021$hover_text <- paste("Origin: ", bmi_edges_2021$Origin,
-                                   "<br>Partner: ", bmi_edges_2021$Partners)
-
-# Prepare data for edge traces
-edges_lon <- unlist(mapply(function(x, y) c(x, y, NA), bmi_edges_2021$source_lon, bmi_edges_2021$target_lon))
-edges_lat <- unlist(mapply(function(x, y) c(x, y, NA), bmi_edges_2021$source_lat, bmi_edges_2021$target_lat))
-edges_hover_text <- bmi_edges_2021$hover_text
-
-
-# Add edge trace
-fig <- fig %>%
-  add_trace(
-    type = "scattergeo",
-    mode = "lines",
-    lon = edges_lon,
-    lat = edges_lat,
-    hoverinfo = "text",
-    hoverlabel = list(bgcolor = "white", font = list(color = "black")),
-    text = edges_hover_text,  # Hover text for edges
-    line = list(color = "orange", width = 0.5)  # Customize line appearance
-  )
-
-fig <- fig %>%
+fig <- fig %>% config(displayModeBar = FALSE)
 
 fig
 ```
@@ -514,6 +492,7 @@ bmi2021_graph <- tbl_graph(nodes = bmi_node_2021,
                             directed = TRUE)
 ```
 
+Basic FR *Layout + Link*
 ```{r}
 #| warning: false 
 
@@ -522,17 +501,111 @@ V(bmi2021_graph)$bmi_usd_price <- bmi_node_2021$bmi_usd_price
 V(bmi2021_graph)$gdp_per_capita<- bmi_node_2021$gdp_per_capita
 V(bmi2021_graph)$inflation <- bmi_node_2021$inflation
 
-ggraph(bmi2021_graph, layout = "fr") + #layout options = kk, fr, nicely,
-  geom_node_point(aes(fill = V(bmi2021_graph)$bmi_usd_price , size = V(bmi2021_graph)$bmi_usd_price, color = continent, show.legend=FALSE))+
-  geom_edge_link2(aes(color = Trade, width = Value), alpha = 0.6, show.legend=FALSE) + 
-  scale_edge_color_manual(values = c("Import Quantity" = "#00CCB0", "Export Quantity" = "#FF6ABE")) +
-  scale_edge_width(range = c(0.5, 4)) +
-  geom_node_text(aes(label = country), repel = TRUE, size = 2, hjust = 0.6, vjust = -1.8, color = "white") +
-  theme_graph(background = '#1D201F', text_colour = 'white') +
-  guides(color = guide_legend(title = "Type"),
-         edge_width = guide_legend(override.aes = list(color = "white")))
-  coord_fixed() 
+#Layout options
 
+ggraph(bmi2021_graph, layout = "kk") + #layout options = kk, fr, nicely,
+  geom_node_point(aes(fill = V(bmi2021_graph)$bmi_usd_price , size = V(bmi2021_graph)$bmi_usd_price, color = continent, alpha = 0.7), show.legend=FALSE)+
+  geom_edge_link2(aes(color = Trade, width = Value), alpha = 0.4, show.legend=FALSE) + 
+  scale_edge_color_manual(values = c("Import Quantity" = "#FF4843", "Export Quantity" = "#f2e901")) +
+  scale_edge_width(range = c(0.5, 7)) +
+  geom_node_text(aes(label = country), repel = TRUE, size = 3, hjust = 0, vjust = 0, nudge_y=-0.2, nudge_x=-0.2, color = "white") +
+  theme_graph(background = '#1D201F', text_colour = 'white')
+  #guides(color = guide_legend(title = "Continents") +
+  #edge_width = guide_legend(override.aes = list(color = "white"))) 
+ #coord_fixed() 
+#
+```
+
+
+Linear Arc *Layout + arc*
+```{r}
+#| warning: false 
+
+#this are the node attributes
+V(bmi2021_graph)$bmi_usd_price <- bmi_node_2021$bmi_usd_price
+V(bmi2021_graph)$gdp_per_capita<- bmi_node_2021$gdp_per_capita
+V(bmi2021_graph)$inflation <- bmi_node_2021$inflation
+
+#Layout options
+
+ggraph(bmi2021_graph, layout = "linear") + #layout options = kk, fr, nicely,
+  geom_node_point(aes(fill = V(bmi2021_graph)$bmi_usd_price , size = V(bmi2021_graph)$bmi_usd_price, colour = continent, alpha = 0.7), show.legend=FALSE)+
+  geom_edge_arc(aes(color = Trade, width = Value), alpha = 0.4, show.legend=FALSE) + 
+  scale_edge_color_manual(values = c("Import Quantity" = "#FF4843", "Export Quantity" = "#f2e901")) +
+  scale_edge_width(range = c(0.5, 7)) +
+  geom_node_text(aes(label = country), repel = FALSE, size = 3.4, hjust = 0, vjust = 0, angle = 270, color = "white", nudge_y=-3, nudge_x=-0.3) +
+  theme_graph(background = '#1D201F', text_colour = 'white')+
+  theme(legend.position="none",
+    plot.margin=unit(c(0,0,0.0,0), "null"),
+    panel.spacing=unit(c(0,0,3.4,0), "null")
+  ) 
+  #guides(color = guide_legend(title = "Continents") +
+  #edge_width = guide_legend(override.aes = list(color = "white"))) 
+ #coord_fixed() 
+#
+```
+
+Circular Arc  *linear + arc*
+```{r}
+#| warning: false 
+
+node_positions <- as.data.frame(create_layout(bmi2021_graph, layout = "linear", circular = TRUE))
+
+# Calculate angles for each node position
+node_positions$angle <- atan2(node_positions$y, node_positions$x) * (180 / pi)
+
+# Adjust angle for text alignment
+node_positions$label_angle <- ifelse(node_positions$angle > 90 | node_positions$angle < -90, node_positions$angle + 180, node_positions$angle)
+
+# Define if the text should be above or below the node based on its angle
+node_positions$hjust <- ifelse(node_positions$angle > 90 | node_positions$angle < -90, 1, 0)
+
+#this are the node attributes
+V(bmi2021_graph)$bmi_usd_price <- bmi_node_2021$bmi_usd_price
+V(bmi2021_graph)$gdp_per_capita<- bmi_node_2021$gdp_per_capita
+V(bmi2021_graph)$inflation <- bmi_node_2021$inflation
+#Layout options
+
+p <- ggraph(bmi2021_graph, layout = "linear", circular = TRUE) + #layout options = kk, fr, nicely,
+  geom_node_point(aes(fill = V(bmi2021_graph)$bmi_usd_price , size = V(bmi2021_graph)$bmi_usd_price, colour = continent, alpha = 0.7), show.legend=FALSE)+
+  geom_edge_arc(aes(color = Trade, width = Value), alpha = 0.3, show.legend=FALSE) + 
+  scale_edge_color_manual(values = c("Import Quantity" = "#FF4843", "Export Quantity" = "#f2e901")) +
+  scale_edge_width(range = c(0.5, 8)) +
+   geom_node_text(data = node_positions, aes(x = x*1.04, y = y*1.04, label = country, angle = label_angle, hjust = hjust), color = "white", size = 2.65) +
+  theme_graph(background = '#1D201F', text_colour = 'white')+
+  theme(legend.position="none",
+    plot.margin=unit(c(0.0,0.0,0,0), "null"),
+    panel.spacing=unit(c(0,0,0,0,0), "null")
+  ) +
+    expand_limits(x = c(-2.4,2.4), y = c(-1.7, 1.4))
+  #guides(color = guide_legend(title = "Continents") +
+  #edge_width = guide_legend(override.aes = list(color = "white"))) 
+ #coord_fixed() 
+p
+```
+
+Layout *Grid & Fan*
+```{r}
+#| warning: false 
+
+#this are the node attributes
+V(bmi2021_graph)$bmi_usd_price <- bmi_node_2021$bmi_usd_price
+V(bmi2021_graph)$gdp_per_capita<- bmi_node_2021$gdp_per_capita
+V(bmi2021_graph)$inflation <- bmi_node_2021$inflation
+
+#Layout options
+
+ggraph(bmi2021_graph, layout = "grid") + #layout options = kk, fr, nicely,
+  geom_node_point(aes(fill = V(bmi2021_graph)$bmi_usd_price , size = V(bmi2021_graph)$bmi_usd_price, color = continent, alpha = 0.7), show.legend=FALSE)+
+  geom_edge_fan(aes(color = Trade, width = Value), alpha = 0.4, show.legend=FALSE) + 
+  scale_edge_color_manual(values = c("Import Quantity" = "#FF4843", "Export Quantity" = "#f2e901")) +
+  scale_edge_width(range = c(0.5, 5)) +
+  geom_node_text(aes(label = country), repel = TRUE, size = 3, hjust = 0, vjust = 0, nudge_y=-0.02, nudge_x=0, color = "white") +
+  theme_graph(background = '#1D201F', text_colour = 'white')
+  #guides(color = guide_legend(title = "Continents") +
+  #edge_width = guide_legend(override.aes = list(color = "white"))) 
+ #coord_fixed() 
+#
 ```
 
 ```{r}
