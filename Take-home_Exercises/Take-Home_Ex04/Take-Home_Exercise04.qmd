@@ -410,9 +410,9 @@ fig <- plot_ly() %>%
         xref = "paper",
         yref = "paper",
         x = -0.05,
-        y = 1.08, #1.05
+        y = 1.075, #1.05
         sizex = 1.1,
-        sizey = 1.14,#1.11
+        sizey = 1.135,#1.11
         sizing = "stretch",
         opacity = 1,
         layer = "below"
@@ -434,12 +434,11 @@ fig <- plot_ly() %>%
 )), dragmode = FALSE)
 
 
-
 for(i in 1:nrow(bmi_edges_2021)) {
   # Define the hover text for the edge
   edge_hover_text <- with(bmi_edges_2021[i, ], paste("", Origin, 
                                                       "|", Partners))
-
+ 
   # Add edge as a line trace
   fig <- fig %>% 
     add_trace(
@@ -447,7 +446,7 @@ for(i in 1:nrow(bmi_edges_2021)) {
       mode = 'lines',
       lon = c(bmi_edges_2021$source_lon[i], bmi_edges_2021$target_lon[i]),
       lat = c(bmi_edges_2021$source_lat[i], bmi_edges_2021$target_lat[i]),
-      line = list(color = 'yellow', width =0.02),
+      line = list(color = 'yellow', width =0.001),
       hoverinfo = 'text',
       text = edge_hover_text,
       showlegend = FALSE
@@ -459,7 +458,7 @@ bmi_node_2021$hover_text <- paste(
   "<br> Total Trade: $", bmi_node_2021$total_trade,
   "<br> Imports: $", bmi_node_2021$import_usd,
   "<br> Exports: $", bmi_node_2021$export_usd)
-  
+ 
 fig <- fig %>% 
   add_trace(
     data = bmi_node_2021,
@@ -483,7 +482,8 @@ fig <- fig %>%
     scope = 'world',
     showframe = FALSE,
     dragmode = FALSE
-  ) }
+  ) 
+}
 fig <- fig%>% config(displayModeBar = FALSE)
 
 fig
