@@ -570,7 +570,7 @@ p <- ggraph(bmi2021_graph, layout = "linear", circular = TRUE) + #layout options
     plot.margin=unit(c(0.0,0.0,0,0), "null"),
     panel.spacing=unit(c(0,0,0,0,0), "null")
   ) +
-    expand_limits(x = c(-2.4,2.4), y = c(-1.7, 1.4))
+    expand_limits(x = c(-2.3,2.3), y = c(-1.7, 1.4))
   #guides(color = guide_legend(title = "Continents") +
   #edge_width = guide_legend(override.aes = list(color = "white"))) 
  #coord_fixed() 
