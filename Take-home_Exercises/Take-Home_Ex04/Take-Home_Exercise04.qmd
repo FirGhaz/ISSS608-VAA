@@ -480,6 +480,10 @@ fig <- fig %>%
       color = 'grey90',
        line = list(width = 1, color = 'red'),
       projection = list(type = 'robinson'),
+       x = -0.05,
+        y = 1.05, 
+        sizex = 1.1,
+        sizey = 1.13,
       sizing = "contain"
     ),
     lon = ~LON,
