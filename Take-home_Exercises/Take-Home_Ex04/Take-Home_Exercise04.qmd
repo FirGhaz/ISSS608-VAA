@@ -412,7 +412,7 @@ fig <- plot_ly() %>%
         x = -0.05,
         y = 1.05, 
         sizex = 1.1,
-        sizey = 1.135,#1.11
+        sizey = 1.13,#1.11
         sizing = "stretch",
         opacity = 1,
         layer = "below"
@@ -455,7 +455,7 @@ fig <- fig %>% add_trace(
     lat = all_lats,
     text = all_texts,  # Assigning hover text
     hoverinfo = 'text',
-    line = list(color = 'yellow', width = 0.003),
+    line = list(color = 'yellow', width = 0.001),
     showlegend = FALSE,
     name = "Trade Links"  # Naming the edges trace
 )
