@@ -434,31 +434,31 @@ fig <- plot_ly() %>%
 )), dragmode = FALSE)
 
 # Initialize vectors to store all edge coordinates with NA as separators
-all_lons <- c()
-all_lats <- c()
-all_texts <- c()  # For hover text
+#all_lons <- c()
+#all_lats <- c()
+#all_texts <- c()  # For hover text
 
 # Populate the vectors
-for(i in 1:nrow(bmi_edges_2021)) {
-    all_lons <- c(all_lons, bmi_edges_2021$source_lon[i], bmi_edges_2021$target_lon[i], NA)
-    all_lats <- c(all_lats, bmi_edges_2021$source_lat[i], bmi_edges_2021$target_lat[i], NA)
-    all_texts <- c(all_texts, paste("Origin:", bmi_edges_2021$Origin[i], 
-                                    "| Destination:", bmi_edges_2021$Partners[i]), "", NA)
-}
+#for(i in 1:nrow(bmi_edges_2021)) {
+   # all_lons <- c(all_lons, bmi_edges_2021$source_lon[i], bmi_edges_2021$target_lon[i], NA)
+    #all_lats <- c(all_lats, bmi_edges_2021$source_lat[i], bmi_edges_2021$target_lat[i], NA)
+    #all_texts <- c(all_texts, paste("Origin:", bmi_edges_2021$Origin[i], 
+                                  #  "| Destination:", bmi_edges_2021$Partners[i]), "", NA)
+#}
 
-edge_hover_text <- with(bmi_edges_2021, paste("", Origin, "|", Partners))
+#edge_hover_text <- with(bmi_edges_2021, paste("", Origin, "|", Partners))
  
-fig <- fig %>% add_trace(
-    type = 'scattergeo',
-    mode = 'lines',
-    lon = all_lons,
-    lat = all_lats,
-    text = all_texts,  # Assigning hover text
-    hoverinfo = 'text',
-    line = list(color = 'yellow', width = 0.001),
-    showlegend = FALSE,
-    name = "Trade Links"  # Naming the edges trace
-)
+#fig <- fig %>% add_trace(
+ #   type = 'scattergeo',
+  #  mode = 'lines',
+   # lon = all_lons,
+    #lat = all_lats,
+#    text = all_texts,  # Assigning hover text
+ #   hoverinfo = 'text',
+  #  line = list(color = 'yellow', width = 0.004),
+   # showlegend = FALSE,
+    #name = "Trade Links"  # Naming the edges trace
+#)
 
 bmi_node_2021$hover_text <- paste(
   "",bmi_node_2021$country,
