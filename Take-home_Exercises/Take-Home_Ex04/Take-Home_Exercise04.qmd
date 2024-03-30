@@ -39,10 +39,135 @@ library(base64enc)
 library(tidygraph)
 library(ggplot2)
 library(ggraph)
-
+library(tmap)
+library(leaflet)
 ```
 
 # 2 EDA Trade on GEO
+
+
+## 2.1 Appreciating through Choropleth
+```{r}
+#| warning: false 
+choropleth<- st_read("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/geospatial/TM_WORLD_BORDERS-0.3.shp")
+choropleth_projected <- st_transform(choropleth, "+proj=robin")  
+dataV <- read_csv("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/vic_countries_with_complete_data.csv")
+invalid_geoms <- st_is_valid(choropleth_projected, reason = TRUE)
+print(invalid_geoms[invalid_geoms != "Valid"])
+choropleth_projected <- st_make_valid(choropleth_projected)
+```
+
+```{r}
+#| warning: false 
+cleaned_dataV <- dataV %>%
+  filter(!is.na(country) & !is.na(year))
+
+map_for_V <- choropleth_projected%>%
+  left_join(cleaned_dataV, by = c("ISO3" = "ISO3", "LON" = "LON", "LAT"= "LAT"))
+  #select(c(country:bmi_diff))%>%
+  #mutate(across(c(bmi_usdprice:bmi_diff), ~ifelse(is.na(.), 0, .)))
+
+library(tmap)
+map_for_V_2021 <- map_for_V %>%
+  filter(year == 2021)
+map_for_V_2021$iso2 <- tolower(map_for_V_2021$ISO2)
+tmap_mode("view")  
+
+tm <- tm_shape(map_for_V_2021) +
+  tm_polygons("bmi_usdprice",  # The variable to visualize
+              palette = "YlOrBr",  # Color palette
+              title = "BMI (US$)",  # Legend title
+              id = "country") +  
+  tm_basemap("CartoDB.DarkMatterNoLabels") + # Tooltip: country name from your dataset
+  tm_layout(legend.position = c("left", "bottom"))  # Adjust legend position
+
+# Print the map
+print(tm)
+```
+
+Looking through the lens of Continents
+
+```{r}
+#| warning: false 
+map_for_V_2021 <- map_for_V %>%
+  filter(year == 2021) %>%
+  mutate(iso2 = tolower(ISO2),
+         info = paste(country))  # Assuming you also meant to use 'inflation' here
+
+tmap_mode("view")
+
+tm <- tm_shape(map_for_V_2021) +
+  tm_polygons("bmi_usdprice", palette = "YlOrBr", title = "BMI (US$)", id = "info", legend.is.portable = FALSE) +
+  tm_facets(by = "continent", ncol = 2) + 
+  tm_layout(legend.show=FALSE)+
+  tm_basemap("CartoDB.DarkMatterNoLabels")
+
+tm
+
+```
+
+
+## 2.2 Interactivity for Binned BMI
+
+```{r}
+#| warning: false 
+library(leaflet)
+library(RColorBrewer)
+map_for_V_2021 <- map_for_V %>%
+  filter(year == 2021)
+map_for_V_2021$iso2 <- tolower(map_for_V_2021$ISO2)
+map_for_V_2021 <- st_transform(map_for_V_2021, 4326)
+
+mybins <- c(1,2,3,4,5,6,7,8)
+pal <- colorBin(palette="YlOrBr", domain = map_for_V_2021$bmi_usdprice, na.color="transparent", bins=mybins)
+map_for_V_2021$image_url <- paste0("https://flagcdn.com/16x12/", map_for_V_2021$iso2, ".png")
+
+leaflet_map <- leaflet(data = map_for_V_2021) %>% 
+  #addTiles() %>% 
+  setView(lat=3, lng=10 , zoom=1) %>%
+  #addProviderTiles(providers$CartoDB.DarkMatterNoLabels) %>%
+  addProviderTiles(providers$NASAGIBS.ViirsEarthAtNight2012) %>%
+  addPolygons(fillOpacity = 1, weight = 1.2, color = "#1D201F",
+              fillColor = ~pal(bmi_usdprice),
+              popup = ~paste('<img srcset="', image_url, '" style="width:20px;height:auto;">',
+                country, "<br>",
+                             "BMI USD Price: $", format(bmi_usdprice, nsmall = 2), "<br>", 
+                             "BMI Local Price: $", format(bmi_localprice, nsmall = 2), "<br>", 
+                             "GDP per Capita: $", format(gdp_per_capita, nsmall = 2), "<br>",
+                             "Inflation(%): ", format(inflation, nsmall = 2)),
+              label = ~as.character(country),  # This will be the tooltip text
+              labelOptions = labelOptions(
+                style = list("font-weight" = "bold", padding = "9px 12px"),
+                direction = "auto",  # Automatically position the tooltip
+                noHide = FALSE,  # The tooltip will hide when not hovered
+                opacity = 1,  # Tooltip background opacity
+                textsize = "10px"
+                      ) 
+)%>%
+addLegend(pal=pal, values=~bmi_usdprice, opacity=0.8, title = "Big Mac Index", position = "bottomleft")
+
+
+leaflet_map <- leaflet_map %>% 
+  onRender("
+    function(el, x) {
+        var lastClickedLayer;
+
+        this.eachLayer(function(layer) {
+          layer.on('click', function(e) {
+            if (lastClickedLayer) {
+              lastClickedLayer.setStyle({fillColor: '#FFEDA0'});
+            }
+            // Change clicked layer's color to green
+            layer.setStyle({fillColor: '#018749'});
+            lastClickedLayer = layer;
+          });
+        });
+      }
+    ")
+
+leaflet_map
+```
+
 
 ```{r}
 #| warning: false 
@@ -50,7 +175,7 @@ worldly<- st_read("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/dat
 worldly_projected <- st_transform(worldly, "+proj=robin")  
 data <- read_csv("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/bmi_data_2021_carto.csv")
 ```
-
+## 2.3 Appreciating Trade Nodes and Edges through Cartogram
 ```{r}
 #| warning: false 
 map_pre <- worldly_projected%>%
@@ -520,7 +645,7 @@ bmi2021_graph <- tbl_graph(nodes = bmi_node_2021,
                             directed = TRUE)
 ```
 
-Basic FR *Layout + Link*
+Basic kk *Layout + Link*
 ```{r}
 #| warning: false 
 
@@ -1157,7 +1282,7 @@ Tidygraph package inherits many of the community detection algorithms imbedded i
 #E(bmi2021_graph)$degree 
 
 weights = E(bmi2021_graph)$Value
-steps = 100 # (2 to 100)
+steps = 30 # (2 to 500)
 
 walktrap_communities <- cluster_walktrap(bmi2021_graph, 
                                          steps = steps,
@@ -1175,6 +1300,48 @@ g <- ggraph(bmi2021_graph, layout = 'kk') +
 
 g
 ```
+```{r}
+# Assuming 'bmi2021_graph' is your graph object and 'weights' are the edge weights
+
+# Define the range for steps
+steps_range <- seq(2, 500, by = 50) # Adjust the step for finer or coarser granularity
+
+# Initialize a vector to store modularity scores
+modularity_scores <- numeric(length(steps_range))
+
+# Sweep over steps
+for (i in seq_along(steps_range)) {
+  steps <- steps_range[i]
+  # Walktrap community detection
+  walktrap_communities <- cluster_walktrap(bmi2021_graph, steps = steps, weights = E(bmi2021_graph)$Value)
+  # Calculate modularity
+  mod_score <- modularity(walktrap_communities, weights = E(bmi2021_graph)$Value)
+  # Store the modularity score
+  modularity_scores[i] <- mod_score
+}
+
+# Visualization
+library(ggplot2)
+
+# Create a data frame for plotting
+modularity_df <- data.frame(Steps = steps_range, Modularity = modularity_scores)
+
+# Line plot of modularity scores vs. steps
+ggplot(modularity_df, aes(x = Steps, y = Modularity)) +
+  geom_line() + 
+  geom_point(shape = 1) + # Adds points to the line
+  theme_minimal() +
+  labs(x = "Steps", y = "Modularity", title = "Effect of Steps on Modularity in Walktrap Community Detection")
+
+# Optionally, you may want to highlight the steps value that leads to the highest modularity score
+max_modularity_steps <- steps_range[which.max(modularity_scores)]
+max_modularity <- max(modularity_scores)
+
+# Print out the optimal steps value and its modularity score for reference
+cat("Optimal Steps:", max_modularity_steps, "- Max Modularity:", max_modularity, "\n")
+
+```
+
 
 *Calling out the communities* - These communities will be passed on for regression.
 ```{r}
@@ -1196,6 +1363,7 @@ if(length(community_membership) == length(node_names)) {
     print("Mismatch in lengths of community memberships and node names.")
 }
 ```
+
 
 ```{r}
 #| warning: false 
@@ -1275,9 +1443,9 @@ gamma: The resolution parameter influences the size of the communities detected.
 
 # Assuming bmi2021_graph is already created and is an igraph object
 # Calibrating Parameters for Spinglass
-spins = 30 # (2 to 30)
+spins = 9 # (2 to 30)
 gamma = 1 # (1 to 15)
-weights = E(bmi2021_graph)$Value
+weights = E(bmi2021_graph)$betweenness
 
 
 spinglass_communities <- cluster_spinglass(bmi2021_graph, 
@@ -1300,6 +1468,45 @@ g <- ggraph(bmi2021_graph, layout = 'kk') +
 
 print(g)
 ```
+```{r}
+library(igraph)
+
+gammas <- seq(1, 30, by = 5)
+spins <- seq(2, 30, by = 5)
+
+# Initialize a matrix to store modularity scores
+modularity_matrix <- matrix(nrow = length(spins), ncol = length(gammas), dimnames = list(spins, gammas))
+
+# Grid search over gamma and spins
+for (g in gammas) {
+  for (s in spins) {
+    # Spinglass community detection
+    spinglass_communities <- cluster_spinglass(bmi2021_graph, spins = s, gamma = g, weights = E(bmi2021_graph)$eigenvector)
+    # Calculate modularity
+    mod_score <- modularity(spinglass_communities, weights = E(bmi2021_graph)$eigenvector)
+    # Store the modularity score
+    modularity_matrix[which(spins == s), which(gammas == g)] <- mod_score
+  }
+}
+
+# Visualization
+library(ggplot2)
+library(reshape2)
+
+# Melt the matrix for ggplot
+modularity_df <- melt(modularity_matrix, varnames = c("Spins", "Gamma"), value.name = "Modularity")
+
+# Heatmap of modularity scores
+ggplot(modularity_df, aes(x = Gamma, y = Spins, fill = Modularity)) +
+  geom_tile() +
+  scale_fill_gradient2(low = "red", high = "blue", mid = "white", midpoint = median(modularity_df$Modularity), space = "Lab", name="Modularity") +
+  theme_minimal() +
+  labs(x = "Gamma", y = "Spins", title = "Modularity Scores for Different Gamma and Spins in Spinglass Community Detection") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+
+```
+
 
 *Calling out the communities* - These communities will be passed on for regression.
 ```{r}
@@ -1396,3 +1603,54 @@ Insight: This method uses a spin model from statistical mechanics and is particu
 
 The Walktrap method may reveal more about regional trading blocks or groups of countries with stronger internal trade links that could have similar Big Mac pricing due to shared market conditions. The Spinglass method can uncover more nuanced and multi-level communities, possibly highlighting intricate trade relationships and their cascading effects on the Big Mac Index.
 :::
+
+## 3.4 Model Evaluation 
+
+```{r}
+library(igraph)
+#E(bmi2021_graph)$Value
+#E(bmi2021_graph)$betweenness 
+#E(bmi2021_graph)$eigenvector 
+#E(bmi2021_graph)$closenesss
+#E(bmi2021_graph)$degree 
+# Walktrap
+
+
+weights = bmi_node_2021$Value
+steps = 30 # (100 to 500)
+
+walktrap_communities <- cluster_walktrap(bmi2021_graph, 
+                                         steps = steps,
+                                         weights = weights)
+
+wt_modularity <- modularity(walktrap_communities)
+print(paste("Walktrap Modularity:", wt_modularity))
+
+
+# Spinglass
+
+spins = 9 # (2 to 30)
+gamma = 1 # (0 to 10)
+weights = E(bmi2021_graph)$betweenness 
+
+
+spinglass_communities <- cluster_spinglass(bmi2021_graph, 
+                                           spins = spins, 
+                                           gamma = gamma,
+                                           weights = weights)
+
+sg_modularity <- modularity(spinglass_communities)
+print(paste("Spinglass Modularity:", sg_modularity))
+
+# Decision based on higher modularity
+if (wt_modularity > sg_modularity) {
+  print("Walktrap is more optimized based on modularity.")
+} else {
+  print("Spinglass is more optimized based on modularity.")
+}
+```
+
+
+
+
+
