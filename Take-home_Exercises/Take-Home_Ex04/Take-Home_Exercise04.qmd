@@ -45,8 +45,8 @@ library(leaflet)
 
 # 2 EDA Trade on GEO
 
-
 ## 2.1 Appreciating through Choropleth
+
 ```{r}
 #| warning: false 
 choropleth<- st_read("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/geospatial/TM_WORLD_BORDERS-0.3.shp")
@@ -105,7 +105,6 @@ tm <- tm_shape(map_for_V_2021) +
 tm
 
 ```
-
 
 ## 2.2 Interactivity for Binned BMI
 
@@ -168,14 +167,15 @@ leaflet_map <- leaflet_map %>%
 leaflet_map
 ```
 
-
 ```{r}
 #| warning: false 
 worldly<- st_read("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/geospatial/TM_WORLD_BORDERS-0.3.shp")
 worldly_projected <- st_transform(worldly, "+proj=robin")  
 data <- read_csv("C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/bmi_data_2021_carto.csv")
 ```
+
 ## 2.3 Appreciating Trade Nodes and Edges through Cartogram
+
 ```{r}
 #| warning: false 
 map_pre <- worldly_projected%>%
@@ -384,7 +384,6 @@ p +  annotate("point", x = legend_x, y = legend_y_total_trade, shape = 21, size 
   theme_custom
 ```
 
-
 ```{r}
 #| warning: false 
 bmi_node_2021 <- read.csv('C:/FirGhaz/ISSS608-VAA/Take-home_Exercises/Take-Home_Ex04/data/bmi_node_2021_add.csv')
@@ -515,6 +514,7 @@ theme_custom
 
 #ggsave("geotrade1.png", plot = r, width = 10, height = 6, dpi = 300)
 ```
+
 To build Interactivity
 
 ```{r}
@@ -623,8 +623,6 @@ fig
 
 ```
 
-
-
 # 3 Visualising the Network: Exploratory Data Analysis
 
 Emphasis here is to give them the option to play with the nodes, layout and geom_edge functions.
@@ -646,6 +644,7 @@ bmi2021_graph <- tbl_graph(nodes = bmi_node_2021,
 ```
 
 Basic kk *Layout + Link*
+
 ```{r}
 #| warning: false 
 
@@ -665,8 +664,8 @@ ggraph(bmi2021_graph, layout = "kk") + #layout options = kk, fr, nicely,
   theme_graph(background = '#1D201F', text_colour = 'white')
 ```
 
-
 Linear Arc *Layout + arc*
+
 ```{r}
 #| warning: false 
 
@@ -691,7 +690,8 @@ ggraph(bmi2021_graph, layout = "linear") + #layout options = kk, fr, nicely,
   
 ```
 
-Circular Arc  *linear + arc*
+Circular Arc *linear + arc*
+
 ```{r}
 #| warning: false 
 
@@ -731,6 +731,7 @@ p
 ```
 
 Layout *Grid & Fan*
+
 ```{r}
 #| warning: false 
 
@@ -838,7 +839,6 @@ network
 
 
 ```
-
 
 ## 3.1 Network Centrality and Community Clustering
 
@@ -1025,7 +1025,6 @@ print(centrality_measures)
 
 *Eigenvector Centrality*: This measure considers not just the quantity of connections a node has, but also the quality. A node scores high in eigenvector centrality if it is connected to other nodes that are themselves central within the network. This measure reflects the intuition that not all connections are equal, and being connected to highly connected nodes contributes more to a node's score.
 
-
 ```{r}
 library(dplyr)
 
@@ -1102,6 +1101,7 @@ closeness_plot
 eigenvector_plot
 
 ```
+
 ```{r}
 selected_countries <- c("Argentina", "Australia", "Brazil", "United Kingdom", 
                         "Canada", "Chile", "China", "Czech Republic", 
@@ -1148,8 +1148,6 @@ degree_plotly <- ggplotly(degree_plot, tooltip = "text")
 degree_plotly
 ```
 
-
-
 ```{r}
 # Merge back the original closeness centrality measure for hover info
 long_centrality_measures_with_original <- long_centrality_measures %>%
@@ -1179,7 +1177,6 @@ closeness_plotly <- ggplotly(closeness_plot, tooltip = "text")
 closeness_plotly
 ```
 
-
 ```{r}
 long_centrality_measures_with_original <- long_centrality_measures %>%
   left_join(centrality_measures %>% select(node, original_betweenness = betweenness), by = "node")
@@ -1207,7 +1204,6 @@ betweenness_plotly <- ggplotly(betweenness_plot, tooltip = "text")
 betweenness_plotly
 ```
 
-
 ```{r}
 long_centrality_measures_with_original <- long_centrality_measures %>%
   left_join(centrality_measures %>% select(node, original_eigenvector = eigenvector), by = "node")
@@ -1233,6 +1229,7 @@ eigenvector_plotly <- ggplotly(eigenvector_plot, tooltip = "text")
 # Print the interactive plot
 eigenvector_plotly
 ```
+
 ```{r}
 combined_plot <- subplot(degree_plotly, betweenness_plotly,closeness_plotly, eigenvector_plotly, nrows = 2, margin = 0.05)
 
@@ -1240,17 +1237,15 @@ combined_plot <- subplot(degree_plotly, betweenness_plotly,closeness_plotly, eig
 combined_plot
 ```
 
-
 In the Shiny App, we will allow the audience to explore these statistical methods to gain insights from the networks.
 
-| Betweenness                                                                                                                                                                                                | Degree                                                                                                                                                                       | EigenVector                                                                                                                                                                                                                                                   | Closeness                                                                                                                                                                                           |
-|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Betweenness                                                                                                                                                                                                                | Degree                                                                                                                                                                                   | EigenVector                                                                                                                                                                                                                                         | Closeness                                                                                                                                                                                             |
+|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | Nodes like the United Kingdom, United States and Sweden have high betweenness centrality, suggesting that they act as significant connectors or bridges within the network, **potentially controlling the flow of trade.** | Nodes such as the Sweden, Canada, United States and UK have high degrees, meaning they have numerous trade connections, possibly making them **central hubs in the beef trade network.** | The eigenvector centrality considers not just the number but the quality of connections. Nodes with high eigenvector centrality, like the **Sweden and Canada, are connected to other well-connected nodes, hinting at influential trade cliques.** | High closeness centrality for nodes like the Philippines, Thailand and Mexico suggests that they can quickly interact or trade with all other nodes, indicating efficiency in their trade operations. |
-| Some countries much higher centrality, which could mean **the trade network relies heavily on these nodes**, possibly creating vulnerability to disruptions.                                               | Degree centrality can suggest potential market influence, with highly connected nodes being able to leverage their position for competitive advantage.                       | This measure reflects the potential for a node to access and influence the broader network through its connections.                                                                                                                                           | Closeness centrality offers insight **into the speed at which a country** can react to supply and demand changes across the global network                                                          |
-| Countries with lower betweenness centrality might have more **direct trade links or may not be critical transit points within the network.**                                                               | A spread of degree centrality across the network would indicate a democratized trading environment, but a concentration suggests a few key players dominate.                 | Low eigenvector centrality could indicate peripheral or less influential roles within the trading network, possibly **representing newer or more specialized markets**.                                                                                       | Low closeness centrality might point to **potential delays in trade flows or inefficiencies,** possibly due to geographical or logistical factor                                                    |
+| Some countries much higher centrality, which could mean **the trade network relies heavily on these nodes**, possibly creating vulnerability to disruptions.                                                               | Degree centrality can suggest potential market influence, with highly connected nodes being able to leverage their position for competitive advantage.                                   | This measure reflects the potential for a node to access and influence the broader network through its connections.                                                                                                                                 | Closeness centrality offers insight **into the speed at which a country** can react to supply and demand changes across the global network                                                            |
+| Countries with lower betweenness centrality might have more **direct trade links or may not be critical transit points within the network.**                                                                               | A spread of degree centrality across the network would indicate a democratized trading environment, but a concentration suggests a few key players dominate.                             | Low eigenvector centrality could indicate peripheral or less influential roles within the trading network, possibly **representing newer or more specialized markets**.                                                                             | Low closeness centrality might point to **potential delays in trade flows or inefficiencies,** possibly due to geographical or logistical factor                                                      |
 
-:::callout: Summary of Insights
-1. Network Roles and Big Mac Pricing:
+:::callout: Summary of Insights 1. Network Roles and Big Mac Pricing:
 
 Countries central in the beef trade network, indicated by high betweenness or degree centrality, may have more stable and competitive beef pricing due to their numerous trade links, which could affect their local Big Mac prices. The presence of key influencers, as suggested by eigenvector centrality, could indicate the potential for price setting or market influence, which can trickle down to the pricing of beef and related products like the Big Mac.
 
@@ -1260,13 +1255,11 @@ Closeness centrality can signal efficient trade practices and the potential for 
 
 3.  Cluster Analysis and Market Groupings:
 
-Clustering helps identify groups of countries with similar trade patterns, which can show regional variations in Big Mac prices due to similarities in trade dynamics and economic profiles. Understanding these clusters can provide insights into regional pricing strategies for the Big Mac and indicate how economic or trade changes in one country might impact others within the same cluster. 
-:::
+Clustering helps identify groups of countries with similar trade patterns, which can show regional variations in Big Mac prices due to similarities in trade dynamics and economic profiles. Understanding these clusters can provide insights into regional pricing strategies for the Big Mac and indicate how economic or trade changes in one country might impact others within the same cluster. :::
 
 ## 3.3 Computing Community Indices
 
 Tidygraph package inherits many of the community detection algorithms imbedded into igraph We will utilise 2 community detection algo: (1) Walktrap and (2) Spinglass (group_spinglass).Some community algorithms are designed to take into account direction or weight, while others ignore it.
-
 
 **WalkTrap** The Walktrap algorithm is another method for detecting communities in graphs. It attempts to find densely connected subgraphs (communities) in a graph based on random walks. The idea is that short random walks tend to stay in the same community.
 
@@ -1300,6 +1293,7 @@ g <- ggraph(bmi2021_graph, layout = 'kk') +
 
 g
 ```
+
 This code performs a sweep over a range of steps values for the Walktrap community detection algorithm, calculates modularity scores for each, and visualizes these scores to identify the optimal steps value for community detection in your graph. The ggplot2 visualization will help you easily spot the steps value that maximizes the modularity score, indicating an optimal community structure.
 
 ```{r}
@@ -1344,8 +1338,8 @@ cat("Optimal Steps:", max_modularity_steps, "- Max Modularity:", max_modularity,
 
 ```
 
-
 *Calling out the communities* - These communities will be passed on for regression.
+
 ```{r}
 community_membership <- membership(walktrap_communities)
 node_names <- V(bmi2021_graph)$country 
@@ -1365,7 +1359,6 @@ if(length(community_membership) == length(node_names)) {
     print("Mismatch in lengths of community memberships and node names.")
 }
 ```
-
 
 ```{r}
 #| warning: false 
@@ -1426,8 +1419,7 @@ network
 
 ```
 
-**Spinglass**
-Exposing the calibrating parameters for this community detection algo.
+**Spinglass** Exposing the calibrating parameters for this community detection algo.
 
 spins: The number of spin states. This is a crucial parameter that can indirectly determine the number of communities detected. A larger number of spins allows the algorithm to explore a more significant number of potential community structures.
 
@@ -1470,7 +1462,8 @@ g <- ggraph(bmi2021_graph, layout = 'kk') +
 
 print(g)
 ```
-This code performs a sweep over a range of spins and gamma values for the spinglasscommunity detection algorithm, calculates modularity scores for each, and visualizes these scores to identify the optimal spins | gamma value for community detection in your graph. The ggplot2 visualization will help you easily spot the steps value that maximizes the modularity score, indicating an optimal community structure.
+
+This code performs a sweep over a range of spins and gamma values for the spinglasscommunity detection algorithm, calculates modularity scores for each, and visualizes these scores to identify the optimal spins \| gamma value for community detection in your graph. The ggplot2 visualization will help you easily spot the steps value that maximizes the modularity score, indicating an optimal community structure.
 
 ```{r}
 library(igraph)
@@ -1511,8 +1504,8 @@ ggplot(modularity_df, aes(x = Gamma, y = Spins, fill = Modularity)) +
 
 ```
 
-
 *Calling out the communities* - These communities will be passed on for regression.
+
 ```{r}
 # Assuming you've already created 'node_stats' as previously discussed
 community_membership <- membership(spinglass_communities)
@@ -1593,7 +1586,6 @@ network
 
 ```
 
-
 ::: Callout:Insights
 1.  Walktrap
 
@@ -1608,7 +1600,7 @@ Insight: This method uses a spin model from statistical mechanics and is particu
 The Walktrap method may reveal more about regional trading blocks or groups of countries with stronger internal trade links that could have similar Big Mac pricing due to shared market conditions. The Spinglass method can uncover more nuanced and multi-level communities, possibly highlighting intricate trade relationships and their cascading effects on the Big Mac Index.
 :::
 
-## 3.4 Model Evaluation 
+## 3.4 Model Evaluation
 
 ```{r}
 library(igraph)
@@ -1653,8 +1645,3 @@ if (wt_modularity > sg_modularity) {
   print("Spinglass is more optimized based on modularity.")
 }
 ```
-
-
-
-
-
