@@ -436,7 +436,7 @@ reactable(
 
 ### **9.7.6 Changing from sparkline to sparkbar**
 
-Instead of displaying the values as sparklines, we can display them as sparkbars as shown below.
+Instead of displaying the values as sparkline, we can display them as sparkbars as shown below.
 
 ```{r}
 reactable(
