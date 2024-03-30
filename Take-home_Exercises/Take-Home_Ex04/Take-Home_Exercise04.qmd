@@ -1300,6 +1300,8 @@ g <- ggraph(bmi2021_graph, layout = 'kk') +
 
 g
 ```
+This code performs a sweep over a range of steps values for the Walktrap community detection algorithm, calculates modularity scores for each, and visualizes these scores to identify the optimal steps value for community detection in your graph. The ggplot2 visualization will help you easily spot the steps value that maximizes the modularity score, indicating an optimal community structure.
+
 ```{r}
 # Assuming 'bmi2021_graph' is your graph object and 'weights' are the edge weights
 
@@ -1468,6 +1470,8 @@ g <- ggraph(bmi2021_graph, layout = 'kk') +
 
 print(g)
 ```
+This code performs a sweep over a range of spins and gamma values for the spinglasscommunity detection algorithm, calculates modularity scores for each, and visualizes these scores to identify the optimal spins | gamma value for community detection in your graph. The ggplot2 visualization will help you easily spot the steps value that maximizes the modularity score, indicating an optimal community structure.
+
 ```{r}
 library(igraph)
 
